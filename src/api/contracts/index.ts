@@ -95,7 +95,7 @@ export const catalogQuerySchema = z.object({
   limit: z.number().int().positive().optional().default(8),
 });
 
-export type CatalogQueryParams = z.infer<typeof catalogQuerySchema>;
+export type CatalogQueryParams = z.input<typeof catalogQuerySchema>;
 
 export interface NFTListResponse {
   items: NFT[];

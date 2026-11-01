@@ -13,6 +13,7 @@ export interface DatabaseState {
   favorites: Record<string, string[]>; // userId -> nftId[]
   carts: Record<string, CartItem[]>; // userId -> CartItem[]
   guestCart: CartItem[];
+  quotes: Record<string, Quotation>; // quoteId -> Quotation
   orders: Record<string, Order[]>; // userId -> Order[]
   idempotencyStore: Record<string, { orderId: string; payloadHash: string; order: Order }>;
   wallets: Record<string, Wallet[]>; // userId -> Wallet[]
@@ -39,6 +40,7 @@ function getInitialState(): DatabaseState {
       'user-sam': [],
     },
     guestCart: [],
+    quotes: {},
     orders: {
       'user-alex': [],
       'user-sam': [],
@@ -153,9 +155,11 @@ class MockDatabase {
   public updateNFT(id: string, partial: Partial<NFT>): NFT | null {
     const nft = this.findNFTById(id);
     if (!nft) return null;
+    const nextVersion = partial.version !== undefined ? partial.version : (nft.version || 1) + 1;
+    const nextUpdatedAt = partial.updatedAt || new Date().toISOString();
     Object.assign(nft, partial, {
-      version: (nft.version || 1) + 1,
-      updatedAt: new Date().toISOString(),
+      version: nextVersion,
+      updatedAt: nextUpdatedAt,
     });
     this.save();
     return nft;
@@ -300,18 +304,20 @@ class MockDatabase {
   public calculateQuote(userId: string | undefined, couponCode?: string): { quote: Quotation; error?: string } {
     const cart = this.getCart(userId);
     if (cart.length === 0) {
-      return {
-        quote: {
-          quoteId: `quote-${Date.now()}`,
-          items: [],
-          subtotalEth: '0',
-          discountEth: '0',
-          gasFeeEth: '0.0035',
-          totalEth: '0.0035',
-          totalUsd: '10.50',
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-        },
+      const emptyQuote: Quotation = {
+        quoteId: `quote-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        items: [],
+        subtotalEth: '0',
+        discountEth: '0',
+        gasFeeEth: '0.0035',
+        totalEth: '0.0035',
+        totalUsd: '10.50',
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       };
+      this.state.quotes = this.state.quotes || {};
+      this.state.quotes[emptyQuote.quoteId] = emptyQuote;
+      this.save();
+      return { quote: emptyQuote };
     }
 
     let subtotal = new Decimal(0);
@@ -371,12 +377,25 @@ class MockDatabase {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     };
 
+    this.state.quotes = this.state.quotes || {};
+    this.state.quotes[quote.quoteId] = quote;
+    this.save();
+
     return { quote };
+  }
+
+  public getQuoteById(quoteId: string): Quotation | undefined {
+    this.state.quotes = this.state.quotes || {};
+    return this.state.quotes[quoteId];
   }
 
   // ==========================================
   // ORDERS WITH IDEMPOTENCY
   // ==========================================
+  public findIdempotentOrder(idempotencyKey: string): { orderId: string; payloadHash: string; order: Order } | undefined {
+    return this.state.idempotencyStore[idempotencyKey];
+  }
+
   public createOrder(params: {
     userId: string;
     idempotencyKey: string;
@@ -414,20 +433,20 @@ class MockDatabase {
       receipt:
         status === 'CONFIRMED'
           ? {
-              orderId,
-              transactionHash: `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,
-              blockNumber: 19827400 + Math.floor(Math.random() * 500),
-              confirmedAt: new Date().toISOString(),
-              totalPaidEth: params.quotation.totalEth,
-              walletAddress: params.walletAddress,
-              network: params.network,
-              itemsPurchased: params.quotation.items.map((i) => ({
-                nftId: i.nftId,
-                name: i.name,
-                priceEth: i.priceEth,
-                quantity: i.quantity,
-              })),
-            }
+            orderId,
+            transactionHash: `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,
+            blockNumber: 19827400 + Math.floor(Math.random() * 500),
+            confirmedAt: new Date().toISOString(),
+            totalPaidEth: params.quotation.totalEth,
+            walletAddress: params.walletAddress,
+            network: params.network,
+            itemsPurchased: params.quotation.items.map((i) => ({
+              nftId: i.nftId,
+              name: i.name,
+              priceEth: i.priceEth,
+              quantity: i.quantity,
+            })),
+          }
           : undefined,
     };
 
