@@ -1,0 +1,150 @@
+import { http, HttpResponse, delay } from 'msw';
+import { db } from '../db';
+import { scenarios } from '../scenarios';
+import { getUserIdFromRequest } from './auth.handlers';
+
+export const cartHandlers = [
+  // GET */api/cart
+  http.get('*/api/cart', async ({ request }) => {
+    const scenario = scenarios.get();
+    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+
+    const userId = getUserIdFromRequest(request) || undefined;
+    const items = db.getCart(userId);
+    const itemCount = items.reduce((acc, i) => acc + i.quantity, 0);
+
+    return HttpResponse.json({ items, itemCount });
+  }),
+
+  // POST */api/cart/items
+  http.post('*/api/cart/items', async ({ request }) => {
+    const scenario = scenarios.get();
+    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+
+    const userId = getUserIdFromRequest(request) || undefined;
+    const body = (await request.json()) as { nftId?: string; quantity?: number };
+
+    if (!body.nftId) {
+      return HttpResponse.json(
+        { error: { code: 'VALIDATION_ERROR', message: 'nftId é obrigatório' } },
+        { status: 400 }
+      );
+    }
+
+    const { cart, error } = db.addToCart(userId, body.nftId, body.quantity || 1);
+    if (error) {
+      return HttpResponse.json(
+        { error: { code: 'AVAILABILITY_CONFLICT', message: error } },
+        { status: 409 }
+      );
+    }
+
+    const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
+    return HttpResponse.json({ items: cart, itemCount });
+  }),
+
+  // PATCH */api/cart/items/:id
+  http.patch('*/api/cart/items/:id', async ({ request, params }) => {
+    const scenario = scenarios.get();
+    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+
+    const userId = getUserIdFromRequest(request) || undefined;
+    const nftId = String(params.id);
+    const body = (await request.json()) as { quantity?: number };
+
+    if (body.quantity === undefined || body.quantity < 0) {
+      return HttpResponse.json(
+        { error: { code: 'VALIDATION_ERROR', message: 'Quantidade inválida' } },
+        { status: 400 }
+      );
+    }
+
+    const cart = db.updateCartQuantity(userId, nftId, body.quantity);
+    const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
+    return HttpResponse.json({ items: cart, itemCount });
+  }),
+
+  // DELETE */api/cart/items/:id
+  http.delete('*/api/cart/items/:id', async ({ request, params }) => {
+    const scenario = scenarios.get();
+    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+
+    const userId = getUserIdFromRequest(request) || undefined;
+    const nftId = String(params.id);
+
+    const cart = db.removeFromCart(userId, nftId);
+    const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
+    return HttpResponse.json({ items: cart, itemCount });
+  }),
+
+  // POST */api/cart/merge
+  http.post('*/api/cart/merge', async ({ request }) => {
+    const scenario = scenarios.get();
+    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+
+    const userId = getUserIdFromRequest(request);
+    if (!userId) {
+      return HttpResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Usuário não autenticado' } },
+        { status: 401 }
+      );
+    }
+
+    const { mergedCart, removedUnavailable } = db.mergeGuestCart(userId);
+    const itemCount = mergedCart.reduce((acc, i) => acc + i.quantity, 0);
+
+    return HttpResponse.json({
+      items: mergedCart,
+      itemCount,
+      removedUnavailable,
+    });
+  }),
+
+  // POST */api/cart/quote
+  http.post('*/api/cart/quote', async ({ request }) => {
+    const scenario = scenarios.get();
+    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+
+    if (scenario.priceChangedInCart) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'PRICE_CHANGED_CONFLICT',
+            message: 'O preço de um ou mais itens no carrinho foi atualizado em tempo real.',
+            details: {
+              updatedItems: [{ nftId: 'nft-2', oldPrice: '0.125', newPrice: '0.180' }],
+            },
+          },
+        },
+        { status: 409 }
+      );
+    }
+
+    const userId = getUserIdFromRequest(request) || undefined;
+    let couponCode: string | undefined;
+
+    try {
+      const body = (await request.json()) as { couponCode?: string };
+      couponCode = body?.couponCode;
+    } catch {
+      // Body vazio é aceitável
+    }
+
+    const { quote, error } = db.calculateQuote(userId, couponCode);
+
+    if (error === 'CUPOM_INVALIDO') {
+      return HttpResponse.json(
+        { error: { code: 'INVALID_COUPON', message: 'Cupom de desconto inválido ou inexistente.' } },
+        { status: 400 }
+      );
+    }
+    if (error === 'CUPOM_EXPIRADO') {
+      return HttpResponse.json(
+        { error: { code: 'EXPIRED_COUPON', message: 'Este cupom de desconto expirou.' } },
+        { status: 400 }
+      );
+    }
+
+    return HttpResponse.json(quote);
+  }),
+];
