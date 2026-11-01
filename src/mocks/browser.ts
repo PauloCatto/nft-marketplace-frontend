@@ -1,13 +1,14 @@
-import { setupWorker } from 'msw/browser'
+import { setupWorker } from 'msw/browser';
+import { handlers } from './handlers';
+import { socketHandler } from './socket/socketHandler';
 
-export const worker = setupWorker()
+export const worker = setupWorker(...handlers, socketHandler);
 
 export async function enableMocking(): Promise<ServiceWorkerRegistration | undefined> {
-  // Always enable MSW in dev and demo builds as required by the challenge specification
   return worker.start({
     onUnhandledRequest: 'bypass',
     serviceWorker: {
       url: '/mockServiceWorker.js',
     },
-  })
+  });
 }
