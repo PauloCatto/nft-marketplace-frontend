@@ -8,6 +8,10 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 
+    /* Strict Mode (Mandatory for TanStack Router & Project Requirements) */
+    "strict": true,
+    "strictNullChecks": true,
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
