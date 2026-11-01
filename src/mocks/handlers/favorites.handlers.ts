@@ -1,7 +1,7 @@
 import { http, HttpResponse, delay } from 'msw';
 import { db } from '../db';
 import { scenarios } from '../scenarios';
-import { getUserIdFromRequest } from './auth.handlers';
+import { requireAuth } from './auth.handlers';
 
 export const favoritesHandlers = [
   // GET */api/favorites
@@ -9,7 +9,10 @@ export const favoritesHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const userId = getUserIdFromRequest(request) || 'user-alex';
+    const auth = requireAuth(request);
+    if (auth.errorResponse) return auth.errorResponse;
+    const { userId } = auth;
+
     const items = db.getFavorites(userId);
     const nftIds = db.getFavoriteIds(userId);
 
@@ -21,6 +24,10 @@ export const favoritesHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
+    const auth = requireAuth(request);
+    if (auth.errorResponse) return auth.errorResponse;
+    const { userId } = auth;
+
     // Simulação determinística de erro transitório para comprovar Rollback da Mutação Otimista
     if (scenario.failFavorites) {
       return HttpResponse.json(
@@ -29,7 +36,6 @@ export const favoritesHandlers = [
       );
     }
 
-    const userId = getUserIdFromRequest(request) || 'user-alex';
     const nftId = String(params.id);
 
     const nft = db.findNFTById(nftId);
@@ -49,6 +55,10 @@ export const favoritesHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
+    const auth = requireAuth(request);
+    if (auth.errorResponse) return auth.errorResponse;
+    const { userId } = auth;
+
     // Simulação determinística de erro transitório para comprovar Rollback da Mutação Otimista
     if (scenario.failFavorites) {
       return HttpResponse.json(
@@ -57,7 +67,6 @@ export const favoritesHandlers = [
       );
     }
 
-    const userId = getUserIdFromRequest(request) || 'user-alex';
     const nftId = String(params.id);
 
     const nftIds = db.removeFavorite(userId, nftId);

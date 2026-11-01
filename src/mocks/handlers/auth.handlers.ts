@@ -12,6 +12,40 @@ export function getUserIdFromRequest(request: Request): string | null {
   return null;
 }
 
+export function requireAuth(request: Request): { userId: string; errorResponse?: never } | { userId?: never; errorResponse: Response } {
+  const scenario = scenarios.get();
+  if (scenario.sessionExpired) {
+    return {
+      errorResponse: HttpResponse.json(
+        { error: { code: 'SESSION_EXPIRED', message: 'Sua sessão expirou. Faça login novamente.' } },
+        { status: 401 }
+      ),
+    };
+  }
+
+  const userId = getUserIdFromRequest(request);
+  if (!userId) {
+    return {
+      errorResponse: HttpResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Token de autenticação não fornecido ou inválido.' } },
+        { status: 401 }
+      ),
+    };
+  }
+
+  const user = db.findUserById(userId);
+  if (!user) {
+    return {
+      errorResponse: HttpResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Sessão inválida: usuário não encontrado.' } },
+        { status: 401 }
+      ),
+    };
+  }
+
+  return { userId };
+}
+
 export const authHandlers = [
   // POST */api/auth/login
   http.post('*/api/auth/login', async ({ request }) => {

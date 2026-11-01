@@ -1,7 +1,17 @@
 import { http, HttpResponse, delay } from 'msw';
 import { db } from '../db';
 import { scenarios } from '../scenarios';
-import { getUserIdFromRequest } from './auth.handlers';
+import { getUserIdFromRequest, requireAuth } from './auth.handlers';
+
+function resolveCartUser(request: Request): { userId: string | undefined; errorResponse?: Response } {
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const auth = requireAuth(request);
+    if (auth.errorResponse) return { userId: undefined, errorResponse: auth.errorResponse };
+    return { userId: auth.userId };
+  }
+  return { userId: getUserIdFromRequest(request) || undefined };
+}
 
 export const cartHandlers = [
   // GET */api/cart
@@ -9,7 +19,9 @@ export const cartHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const userId = getUserIdFromRequest(request) || undefined;
+    const { userId, errorResponse } = resolveCartUser(request);
+    if (errorResponse) return errorResponse;
+
     const items = db.getCart(userId);
     const itemCount = items.reduce((acc, i) => acc + i.quantity, 0);
 
@@ -21,7 +33,9 @@ export const cartHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const userId = getUserIdFromRequest(request) || undefined;
+    const { userId, errorResponse } = resolveCartUser(request);
+    if (errorResponse) return errorResponse;
+
     const body = (await request.json()) as { nftId?: string; quantity?: number };
 
     if (!body.nftId) {
@@ -48,7 +62,9 @@ export const cartHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const userId = getUserIdFromRequest(request) || undefined;
+    const { userId, errorResponse } = resolveCartUser(request);
+    if (errorResponse) return errorResponse;
+
     const nftId = String(params.id);
     const body = (await request.json()) as { quantity?: number };
 
@@ -69,7 +85,9 @@ export const cartHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const userId = getUserIdFromRequest(request) || undefined;
+    const { userId, errorResponse } = resolveCartUser(request);
+    if (errorResponse) return errorResponse;
+
     const nftId = String(params.id);
 
     const cart = db.removeFromCart(userId, nftId);
@@ -82,13 +100,9 @@ export const cartHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const userId = getUserIdFromRequest(request);
-    if (!userId) {
-      return HttpResponse.json(
-        { error: { code: 'UNAUTHORIZED', message: 'Usuário não autenticado' } },
-        { status: 401 }
-      );
-    }
+    const auth = requireAuth(request);
+    if (auth.errorResponse) return auth.errorResponse;
+    const { userId } = auth;
 
     const { mergedCart, removedUnavailable } = db.mergeGuestCart(userId);
     const itemCount = mergedCart.reduce((acc, i) => acc + i.quantity, 0);
@@ -105,6 +119,9 @@ export const cartHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
+    const { userId, errorResponse } = resolveCartUser(request);
+    if (errorResponse) return errorResponse;
+
     if (scenario.priceChangedInCart) {
       return HttpResponse.json(
         {
@@ -120,7 +137,6 @@ export const cartHandlers = [
       );
     }
 
-    const userId = getUserIdFromRequest(request) || undefined;
     let couponCode: string | undefined;
 
     try {
