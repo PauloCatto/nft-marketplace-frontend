@@ -132,6 +132,12 @@ Para elevar a experiência do produto a um padrão de produção real, implement
    - **Central de Suporte Web3 & Diagnóstico On-Chain (`/support`)**: Painel com status operacional das redes em tempo real, ferramenta de **Auditoria Instantânea de Hash/Carteira (`0x...`)** e abertura de chamados prioritários com geração imediata de número de protocolo (`#KUR-XXXX`).
 7. **Modal Editorial Profissional no "Diário da Cunhagem" (`/`)**:
    - Leitura completa dos artigos na Home com capa em alta definição, tempo de leitura, destaque de segurança Web3 e atalho para explorar o acervo.
+8. **Explorador de Blocos Etherscan On-Chain e Download de Recibo Assinado (`/checkout`)**:
+   - Ao concluir a compra e clicar em **"Ver no Etherscan"**, abre um modal completo do **Explorador On-Chain Etherscan** exibindo o status da rede (`Ethereum Mainnet • 12 Confirmações`), o `Transaction Hash` completo com botão de cópia rápida, os endereços de origem (`Contrato Kurio Vault`) e destino (`Carteira do Colecionador`), a lista detalhada de tokens ERC-721 transferidos e ações diretas para **Baixar o Recibo On-Chain (`.JSON`)** ou ir direto para **Meus Downloads (`/downloads`)**.
+9. **Autenticação Social OAuth 2.0 Híbrida (Google e Facebook) com Seletor de Conta (`AuthModal`)**:
+   - Suporte a variáveis de ambiente OAuth 2.0 (`VITE_GOOGLE_CLIENT_ID` e `VITE_FACEBOOK_APP_ID`) combinado com um **Seletor Interativo de Contas OAuth** integrado ao MSW (`POST /api/auth/social`), permitindo escolher contas pré-configuradas ou autenticar com qualquer e-mail e senha personalizados com criação/sincronização automática de perfil.
+10. **Experiência Mobile Aprimorada (Filtros Touch, URL Limpa e Toasts Fecháveis)**:
+    - Painel de filtros mobile com seleção rápida por *Categoria*, *Ordenação* e *Faixas de Preço pré-definidas*, ocultação inteligente da barra inferior enquanto o teclado virtual está aberto, URL inicial limpa via `stripSearchParams` e botão `X` em todos os alertas flutuantes.
 
 ---
 
