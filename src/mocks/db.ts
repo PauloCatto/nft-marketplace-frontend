@@ -109,9 +109,7 @@ class MockDatabase {
     this.save();
   }
 
-  // ==========================================
   // USERS & AUTH
-  // ==========================================
   public findUserByEmail(email: string): UserRecord | undefined {
     return this.state.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
   }
@@ -157,9 +155,7 @@ class MockDatabase {
     return true;
   }
 
-  // ==========================================
   // NFTS
-  // ==========================================
   public getNFTs(): NFT[] {
     return [...this.state.nfts];
   }
@@ -181,9 +177,7 @@ class MockDatabase {
     return nft;
   }
 
-  // ==========================================
   // FAVORITES (ISOLATED PER USER)
-  // ==========================================
   public getFavorites(userId: string): NFT[] {
     const ids = this.state.favorites[userId] || [];
     return this.state.nfts.filter((nft) => ids.includes(nft.id));
@@ -215,9 +209,7 @@ class MockDatabase {
     return this.state.favorites[userId];
   }
 
-  // ==========================================
   // CART & MERGE LOGIC
-  // ==========================================
   public getCart(userId?: string): CartItem[] {
     if (!userId) return [...this.state.guestCart];
     if (!this.state.carts[userId]) this.state.carts[userId] = [];
@@ -308,15 +300,12 @@ class MockDatabase {
       }
     }
 
-    // Limpa o carrinho de visitante após a mesclagem
     this.state.guestCart = [];
     this.save();
     return { mergedCart: userCart, removedUnavailable };
   }
 
-  // ==========================================
   // QUOTATION ENGINE (COM DECIMAL.JS)
-  // ==========================================
   public calculateQuote(userId: string | undefined, couponCode?: string): { quote: Quotation; error?: string } {
     const cart = this.getCart(userId);
     if (cart.length === 0) {
@@ -405,9 +394,7 @@ class MockDatabase {
     return this.state.quotes[quoteId];
   }
 
-  // ==========================================
   // ORDERS WITH IDEMPOTENCY
-  // ==========================================
   public findIdempotentOrder(idempotencyKey: string): { orderId: string; payloadHash: string; order: Order } | undefined {
     return this.state.idempotencyStore[idempotencyKey];
   }
@@ -466,7 +453,6 @@ class MockDatabase {
           : undefined,
     };
 
-    // Atualiza estoque se confirmado
     if (status === 'CONFIRMED') {
       for (const item of params.quotation.items) {
         const nft = this.findNFTById(item.nftId);
@@ -477,11 +463,14 @@ class MockDatabase {
           }
         }
       }
-      // Limpa carrinho do usuário após compra confirmada
-      this.state.carts[params.userId] = [];
+
+      if (params.userId === 'guest') {
+        this.state.guestCart = [];
+      } else {
+        this.state.carts[params.userId] = [];
+      }
     }
 
-    // Registra no store de idempotência e na lista do usuário
     this.state.idempotencyStore[params.idempotencyKey] = {
       orderId,
       payloadHash: params.payloadHash,
@@ -526,9 +515,7 @@ class MockDatabase {
     return order;
   }
 
-  // ==========================================
   // WALLETS
-  // ==========================================
   public getWallets(userId: string): Wallet[] {
     return this.state.wallets[userId] || [];
   }
