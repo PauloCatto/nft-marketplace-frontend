@@ -1,7 +1,17 @@
 import { http, HttpResponse, delay } from 'msw';
 import { db } from '../db';
 import { scenarios } from '../scenarios';
-import { requireAuth } from './auth.handlers';
+import { getUserIdFromRequest, requireAuth } from './auth.handlers';
+
+function resolveFavoritesUser(request: Request): { userId: string; errorResponse?: Response } {
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const auth = requireAuth(request);
+    if (auth.errorResponse) return { userId: 'guest', errorResponse: auth.errorResponse };
+    return { userId: auth.userId };
+  }
+  return { userId: getUserIdFromRequest(request) || 'guest' };
+}
 
 export const favoritesHandlers = [
   // GET */api/favorites
@@ -9,9 +19,8 @@ export const favoritesHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveFavoritesUser(request);
+    if (errorResponse) return errorResponse;
 
     const items = db.getFavorites(userId);
     const nftIds = db.getFavoriteIds(userId);
@@ -24,9 +33,8 @@ export const favoritesHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveFavoritesUser(request);
+    if (errorResponse) return errorResponse;
 
     // Simulação determinística de erro transitório para comprovar Rollback da Mutação Otimista
     if (scenario.failFavorites) {
@@ -55,9 +63,8 @@ export const favoritesHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveFavoritesUser(request);
+    if (errorResponse) return errorResponse;
 
     // Simulação determinística de erro transitório para comprovar Rollback da Mutação Otimista
     if (scenario.failFavorites) {
