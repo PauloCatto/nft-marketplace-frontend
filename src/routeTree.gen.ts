@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MercadoRouteImport } from './routes/mercado'
 import { Route as TestSocketRouteImport } from './routes/test-socket'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MercadoRoute = MercadoRouteImport.update({
+  id: '/mercado',
+  path: '/mercado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TestSocketRoute = TestSocketRouteImport.update({
@@ -25,27 +31,31 @@ const TestSocketRoute = TestSocketRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/mercado': typeof MercadoRoute
   '/test-socket': typeof TestSocketRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/mercado': typeof MercadoRoute
   '/test-socket': typeof TestSocketRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/mercado': typeof MercadoRoute
   '/test-socket': typeof TestSocketRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/test-socket'
+  fullPaths: '/' | '/mercado' | '/test-socket'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/test-socket'
-  id: '__root__' | '/' | '/test-socket'
+  to: '/' | '/mercado' | '/test-socket'
+  id: '__root__' | '/' | '/mercado' | '/test-socket'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MercadoRoute: typeof MercadoRoute
   TestSocketRoute: typeof TestSocketRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mercado': {
+      id: '/mercado'
+      path: '/mercado'
+      fullPath: '/mercado'
+      preLoaderRoute: typeof MercadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/test-socket': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MercadoRoute: MercadoRoute,
   TestSocketRoute: TestSocketRoute,
 }
 export const routeTree = rootRouteImport

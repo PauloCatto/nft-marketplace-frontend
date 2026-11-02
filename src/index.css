@@ -1,33 +1,101 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0f17;
-  --foreground: #f8fafc;
-  --card: #131926;
-  --card-foreground: #f8fafc;
-  --popover: #131926;
-  --popover-foreground: #f8fafc;
-  --primary: #10b981;
-  --primary-foreground: #022c22;
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #22c55e;
-  --accent-foreground: #052e16;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #10b981;
+  --background: #140D0A;
+  --foreground: #FAF5F0;
+  --card: #1F1510;
+  --card-foreground: #FAF5F0;
+  --popover: #1F1510;
+  --popover-foreground: #FAF5F0;
+  --primary: #D1823C;
+  --primary-foreground: #140D0A;
+  --secondary: #2A1C15;
+  --secondary-foreground: #FAF5F0;
+  --muted: #261A14;
+  --muted-foreground: #A8968A;
+  --accent: #D1823C;
+  --accent-foreground: #140D0A;
+  --destructive: #EF4444;
+  --destructive-foreground: #FAF5F0;
+  --border: #33231A;
+  --input: #2A1C15;
+  --ring: #D1823C;
   --radius: 0.75rem;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #140D0A;
+  color: #FAF5F0;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   min-height: 100vh;
   margin: 0;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Shimmer effect for skeletons */
+@keyframes kurio-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #1F1510 25%,
+    #2D1F18 50%,
+    #1F1510 75%
+  );
+  background-size: 200% 100%;
+  animation: kurio-shimmer 1.8s infinite linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+    background: #241812;
+  }
+}
+
+/* Accessible focus styles */
+:focus-visible {
+  outline: 2px solid #D1823C;
+  outline-offset: 2px;
+}
+
+/* Custom Range Input styling */
+input[type="range"].kurio-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"].kurio-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 9999px;
+  background: #D1823C;
+  border: 2px solid #FAF5F0;
+  margin-top: -5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+input[type="range"].kurio-range::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 9999px;
+  background: #D1823C;
+  border: 2px solid #FAF5F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }

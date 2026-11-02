@@ -55,16 +55,37 @@ export interface NFTHistoryItem {
   transactionHash: string;
 }
 
+export type NFTCategory =
+  | 'Art'
+  | 'Gaming'
+  | 'Photography'
+  | 'Collectibles'
+  | 'Arte digital'
+  | 'Fotografia'
+  | 'Música'
+  | 'Arte 3D'
+  | 'Colecionáveis'
+  | 'Generativo'
+  | 'Jogos'
+  | 'Assinaturas'
+  | 'Utilidade';
+
+export type NFTNetwork = 'Ethereum' | 'Polygon' | 'Solana';
+
 export interface NFT {
   id: string;
   version: number;
   name: string;
   collection: string;
-  category: 'Art' | 'Gaming' | 'Photography' | 'Collectibles';
+  category: NFTCategory;
+  network?: NFTNetwork;
   description: string;
   imageUrl: string;
   priceEth: EthAmount;
+  originalPriceEth?: EthAmount;
   priceUsd: string;
+  isNewLaunch?: boolean;
+  isTrending?: boolean;
   creator: {
     name: string;
     address: string;
@@ -87,15 +108,17 @@ export interface NFT {
 
 export const catalogQuerySchema = z.object({
   search: z.string().optional().default(''),
-  category: z.enum(['All', 'Art', 'Gaming', 'Photography', 'Collectibles']).optional().default('All'),
+  category: z.string().optional().default('All'),
+  network: z.string().optional().default('All'),
+  tab: z.enum(['all', 'new', 'trending']).optional().default('all'),
   minPrice: z.string().optional(),
   maxPrice: z.string().optional(),
   sort: z.enum(['newest', 'price_asc', 'price_desc', 'popular']).optional().default('newest'),
-  page: z.number().int().positive().optional().default(1),
-  limit: z.number().int().positive().optional().default(8),
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce.number().int().positive().optional().default(9),
 });
 
-export type CatalogQueryParams = z.input<typeof catalogQuerySchema>;
+export type CatalogQueryParams = Partial<z.infer<typeof catalogQuerySchema>>;
 
 export interface NFTListResponse {
   items: NFT[];
