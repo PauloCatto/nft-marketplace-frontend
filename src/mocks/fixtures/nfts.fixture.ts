@@ -348,8 +348,6 @@ export const initialNFTsFixture: NFT[] = [
     history: [],
   },
   
-  
-  
   {
     id: 'nft-10',
     version: 1,
@@ -648,8 +646,6 @@ export const initialNFTsFixture: NFT[] = [
     updatedAt: '2026-03-13T07:00:00.000Z',
     history: [],
   },
-  
-  
   
   ...Array.from({ length: 18 }, (_, idx): NFT => {
     const num = idx + 19;

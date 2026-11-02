@@ -20,7 +20,7 @@ export const nftHandlers = [
   
   http.get('*/api/nfts', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 220);
 
     if (scenario.simulateHttp500OnCatalog) {
       return HttpResponse.json(
@@ -51,36 +51,41 @@ export const nftHandlers = [
     const limit = Math.max(1, parseInt(url.searchParams.get('limit') || '9', 10));
 
     let nfts = db.getNFTs();
-
     
     if (tab === 'new') {
       nfts = nfts.filter((nft) => Boolean(nft.isNewLaunch));
     } else if (tab === 'trending') {
       nfts = nfts.filter((nft) => Boolean(nft.isTrending));
     }
-
     
     if (search) {
-      nfts = nfts.filter(
-        (nft) =>
-          nft.name.toLowerCase().includes(search) ||
-          nft.collection.toLowerCase().includes(search) ||
-          nft.creator.name.toLowerCase().includes(search)
-      );
+      nfts = nfts.filter((nft) => {
+        const name = (nft.name || '').toLowerCase();
+        const collection = (nft.collection || '').toLowerCase();
+        const creator = (nft.creator?.name || '').toLowerCase();
+        const category = (nft.category || '').toLowerCase();
+        const network = (nft.network || '').toLowerCase();
+        const description = (nft.description || '').toLowerCase();
+        return (
+          name.includes(search) ||
+          collection.includes(search) ||
+          creator.includes(search) ||
+          category.includes(search) ||
+          network.includes(search) ||
+          description.includes(search)
+        );
+      });
     }
-
     
     if (category && category !== 'All') {
       const catLower = category.toLowerCase();
       const allowed = CATEGORY_ALIASES[catLower] || [catLower];
       nfts = nfts.filter((nft) => allowed.includes(nft.category.toLowerCase()));
     }
-
     
     if (network && network !== 'All') {
       nfts = nfts.filter((nft) => (nft.network || 'Ethereum').toLowerCase() === network.toLowerCase());
     }
-
     
     if (minPrice) {
       try {
@@ -98,7 +103,6 @@ export const nftHandlers = [
         
       }
     }
-
     
     nfts.sort((a, b) => {
       if (sort === 'price_asc') {
@@ -129,11 +133,10 @@ export const nftHandlers = [
       totalPages,
     });
   }),
-
   
   http.get('*/api/nfts/:id', async ({ params }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 220);
 
     const { id } = params;
     const nft = db.findNFTById(String(id));

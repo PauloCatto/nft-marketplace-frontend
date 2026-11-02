@@ -27,7 +27,6 @@ export const cartHandlers = [
 
     return HttpResponse.json({ items, itemCount });
   }),
-
   
   http.post('*/api/cart/items', async ({ request }) => {
     const scenario = scenarios.get();
@@ -56,7 +55,6 @@ export const cartHandlers = [
     const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
     return HttpResponse.json({ items: cart, itemCount });
   }),
-
   
   http.patch('*/api/cart/items/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
@@ -79,7 +77,6 @@ export const cartHandlers = [
     const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
     return HttpResponse.json({ items: cart, itemCount });
   }),
-
   
   http.delete('*/api/cart/items/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
@@ -94,7 +91,6 @@ export const cartHandlers = [
     const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
     return HttpResponse.json({ items: cart, itemCount });
   }),
-
   
   http.post('*/api/cart/merge', async ({ request }) => {
     const scenario = scenarios.get();
@@ -113,7 +109,6 @@ export const cartHandlers = [
       removedUnavailable,
     });
   }),
-
   
   http.post('*/api/cart/quote', async ({ request }) => {
     const scenario = scenarios.get();

@@ -93,7 +93,6 @@ export const authHandlers = [
       expiresAt,
     });
   }),
-
   
   http.post('*/api/auth/register', async ({ request }) => {
     const scenario = scenarios.get();
@@ -141,7 +140,6 @@ export const authHandlers = [
       { status: 201 }
     );
   }),
-
   
   http.get('*/api/auth/me', async ({ request }) => {
     const scenario = scenarios.get();
@@ -181,7 +179,6 @@ export const authHandlers = [
       },
     });
   }),
-
   
   http.post('*/api/auth/logout', async () => {
     return HttpResponse.json({ success: true });

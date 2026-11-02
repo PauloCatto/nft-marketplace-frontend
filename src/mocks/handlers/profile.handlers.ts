@@ -40,7 +40,6 @@ export const profileHandlers = [
       createdAt: user.createdAt,
     });
   }),
-
   
   http.put('*/api/profile', async ({ request }) => {
     const scenario = scenarios.get();
@@ -69,7 +68,6 @@ export const profileHandlers = [
       createdAt: updated.createdAt,
     });
   }),
-
   
   http.put('*/api/profile/password', async ({ request }) => {
     const scenario = scenarios.get();

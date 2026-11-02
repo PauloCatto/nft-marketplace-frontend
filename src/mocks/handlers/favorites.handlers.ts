@@ -27,7 +27,6 @@ export const favoritesHandlers = [
 
     return HttpResponse.json({ items, nftIds });
   }),
-
   
   http.post('*/api/favorites/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
@@ -35,7 +34,6 @@ export const favoritesHandlers = [
 
     const { userId, errorResponse } = resolveFavoritesUser(request);
     if (errorResponse) return errorResponse;
-
     
     if (scenario.failFavorites) {
       return HttpResponse.json(
@@ -57,7 +55,6 @@ export const favoritesHandlers = [
     const nftIds = db.addFavorite(userId, nftId);
     return HttpResponse.json({ success: true, nftIds }, { status: 201 });
   }),
-
   
   http.delete('*/api/favorites/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
@@ -65,7 +62,6 @@ export const favoritesHandlers = [
 
     const { userId, errorResponse } = resolveFavoritesUser(request);
     if (errorResponse) return errorResponse;
-
     
     if (scenario.failFavorites) {
       return HttpResponse.json(

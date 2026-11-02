@@ -46,7 +46,6 @@ export const orderHandlers = [
     }
 
     const payloadHash = hashPayload(body);
-
     
     const existingIdempotent = db.findIdempotentOrder(idempotencyKey);
     if (existingIdempotent) {
@@ -63,7 +62,6 @@ export const orderHandlers = [
       }
       return HttpResponse.json(existingIdempotent.order, { status: 200 });
     }
-
     
     const savedQuote = db.getQuoteById(body.quoteId);
     if (!savedQuote) {
@@ -79,7 +77,6 @@ export const orderHandlers = [
         { status: 409 }
       );
     }
-
     
     if (scenario.editionSoldOut) {
       return HttpResponse.json(
@@ -104,7 +101,6 @@ export const orderHandlers = [
         { status: 409 }
       );
     }
-
     
     for (const item of savedQuote.items) {
       const currentNft = db.findNFTById(item.nftId);
@@ -167,7 +163,6 @@ export const orderHandlers = [
     const status = result.isReplay ? 200 : 201;
     return HttpResponse.json(result.order, { status });
   }),
-
   
   http.get('*/api/orders/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
@@ -188,7 +183,6 @@ export const orderHandlers = [
 
     return HttpResponse.json(order);
   }),
-
   
   http.get('*/api/orders/:id/receipt', async ({ request, params }) => {
     const scenario = scenarios.get();
