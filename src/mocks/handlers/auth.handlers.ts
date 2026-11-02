@@ -180,6 +180,54 @@ export const authHandlers = [
     });
   }),
   
+  http.post('*/api/auth/social', async ({ request }) => {
+    const scenario = scenarios.get();
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
+
+    const body = (await request.json()) as {
+      provider: 'Google' | 'Facebook';
+      email: string;
+      name: string;
+      avatarUrl?: string;
+    };
+
+    if (!body.email || !body.name) {
+      return HttpResponse.json(
+        { error: { code: 'VALIDATION_ERROR', message: 'Dados do provedor social incompletos' } },
+        { status: 400 }
+      );
+    }
+
+    let user = db.findUserByEmail(body.email);
+    if (!user) {
+      user = db.createUser({
+        name: body.name,
+        email: body.email,
+        passwordHash: 'simulated_hash_Password123!',
+      });
+    }
+
+    if (body.avatarUrl && user.avatarUrl !== body.avatarUrl) {
+      user = db.updateUser(user.id, { name: body.name, avatarUrl: body.avatarUrl }) ?? user;
+    }
+
+    const token = `simulated-jwt-${user.id}`;
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    return HttpResponse.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        bio: user.bio,
+        avatarUrl: user.avatarUrl,
+        createdAt: user.createdAt,
+      },
+      expiresAt,
+    });
+  }),
+
   http.post('*/api/auth/logout', async () => {
     return HttpResponse.json({ success: true });
   }),

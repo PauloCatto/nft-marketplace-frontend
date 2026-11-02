@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { io } from 'socket.io-client';
 import { X, ChevronLeft, MoreVertical, Wallet as WalletIcon, AlertTriangle } from 'lucide-react';
 import Decimal from 'decimal.js';
 import { toast } from 'sonner';
@@ -16,7 +15,7 @@ import type {
   User as UserType,
   Wallet,
 } from '../api/contracts';
-import { JUNGLE_WS_URL } from '../mocks/socket/socketHandler';
+import { createJungleSocket } from '../mocks/socket/socketHandler';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 
@@ -163,10 +162,7 @@ function CheckoutPaymentPage() {
   });
 
   useEffect(() => {
-    const socket = io(JUNGLE_WS_URL, {
-      transports: ['websocket'],
-      autoConnect: true,
-    });
+    const socket = createJungleSocket();
 
     socket.on('nft.updated', (event: NftUpdatedEvent) => {
       const isInCart = cartData?.items?.some((i) => i.nftId === event.nftId);

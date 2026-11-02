@@ -1,42 +1,56 @@
 import { ws } from 'msw';
-import { toSocketIo } from '@mswjs/socket.io-binding';
 import Decimal from 'decimal.js';
 import { db } from '../db';
 import type { NftUpdatedEvent, OrderUpdatedEvent } from '../../api/contracts';
 
 export const JUNGLE_WS_URL = 'wss://api.jungle.io';
 
-export const jungleWs = ws.link(/socket\.io/);
+export const jungleWs = ws.link(/api\.jungle\.io|socket\.io/);
 
-const activeClients = new Set<ReturnType<typeof toSocketIo>>();
+const socketBus = new EventTarget();
 
-export const socketHandler = jungleWs.addEventListener('connection', (connection) => {
-  const io = toSocketIo(connection);
-  activeClients.add(io);
+export const socketHandler = jungleWs.addEventListener('connection', () => {});
 
-  connection.client.addEventListener('close', () => {
-    activeClients.delete(io);
-  });
+export interface JungleSocketClient {
+  on(event: 'nft.updated', listener: (payload: NftUpdatedEvent) => void): void;
+  on(event: 'order.updated', listener: (payload: OrderUpdatedEvent) => void): void;
+  on(event: 'connect', listener: () => void): void;
+  disconnect(): void;
+}
 
-  io.client.on('ping', () => {
-    io.client.emit('pong', { timestamp: new Date().toISOString() });
-  });
-  
-  io.client.on('trigger-nft-update', (_event, customPayload) => {
-    const payload: NftUpdatedEvent = (customPayload as NftUpdatedEvent) || {
-      nftId: 'nft-1',
-      version: 2,
-      priceEth: '0.500',
-      isAvailable: true,
-      availableEditions: 6,
-      updatedAt: new Date().toISOString(),
-    };
-    emitMockNftUpdated(payload);
-  });
-});
+export function createJungleSocket(): JungleSocketClient {
+  const cleanups: Array<() => void> = [];
+
+  return {
+    on(
+      event: 'nft.updated' | 'order.updated' | 'connect',
+      listener: ((payload: NftUpdatedEvent) => void) | ((payload: OrderUpdatedEvent) => void) | (() => void)
+    ) {
+      if (event === 'connect') {
+        const timer = window.setTimeout(() => {
+          (listener as () => void)();
+        }, 10);
+        cleanups.push(() => window.clearTimeout(timer));
+        return;
+      }
+
+      const handler = (e: Event) => {
+        const customEvent = e as CustomEvent;
+        (listener as (payload: unknown) => void)(customEvent.detail);
+      };
+      socketBus.addEventListener(event, handler);
+      cleanups.push(() => socketBus.removeEventListener(event, handler));
+    },
+    disconnect() {
+      while (cleanups.length > 0) {
+        const fn = cleanups.pop();
+        fn?.();
+      }
+    },
+  };
+}
 
 export function emitMockNftUpdated(event: NftUpdatedEvent): void {
-  
   const priceUsd = new Decimal(event.priceEth).times('3000').toFixed(2);
   db.updateNFT(event.nftId, {
     version: event.version,
@@ -47,13 +61,7 @@ export function emitMockNftUpdated(event: NftUpdatedEvent): void {
     updatedAt: event.updatedAt,
   });
 
-  for (const io of activeClients) {
-    try {
-      io.client.emit('nft.updated', event);
-    } catch {
-      activeClients.delete(io);
-    }
-  }
+  socketBus.dispatchEvent(new CustomEvent('nft.updated', { detail: event }));
 }
 
 export function emitMockOrderUpdated(event: OrderUpdatedEvent): void {
@@ -61,11 +69,5 @@ export function emitMockOrderUpdated(event: OrderUpdatedEvent): void {
     db.updateOrderStatus(event.orderId, event.status);
   }
 
-  for (const io of activeClients) {
-    try {
-      io.client.emit('order.updated', event);
-    } catch {
-      activeClients.delete(io);
-    }
-  }
+  socketBus.dispatchEvent(new CustomEvent('order.updated', { detail: event }));
 }
