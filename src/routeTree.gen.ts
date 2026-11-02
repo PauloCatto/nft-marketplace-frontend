@@ -10,47 +10,66 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AprendaRouteImport } from './routes/aprenda'
-import { Route as CarrinhoRouteImport } from './routes/carrinho'
-import { Route as CriadoresRouteImport } from './routes/criadores'
-import { Route as MercadoRouteImport } from './routes/mercado'
-import { Route as PagamentoRouteImport } from './routes/pagamento'
-import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as CartRouteImport } from './routes/cart'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as CreatorsRouteImport } from './routes/creators'
+import { Route as DownloadsRouteImport } from './routes/downloads'
+import { Route as LearnRouteImport } from './routes/learn'
+import { Route as MarketRouteImport } from './routes/market'
+import { Route as OffersRouteImport } from './routes/offers'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as TestSocketRouteImport } from './routes/test-socket'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AprendaRoute = AprendaRouteImport.update({
-  id: '/aprenda',
-  path: '/aprenda',
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CarrinhoRoute = CarrinhoRouteImport.update({
-  id: '/carrinho',
-  path: '/carrinho',
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CriadoresRoute = CriadoresRouteImport.update({
-  id: '/criadores',
-  path: '/criadores',
+const CreatorsRoute = CreatorsRouteImport.update({
+  id: '/creators',
+  path: '/creators',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MercadoRoute = MercadoRouteImport.update({
-  id: '/mercado',
-  path: '/mercado',
+const DownloadsRoute = DownloadsRouteImport.update({
+  id: '/downloads',
+  path: '/downloads',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PagamentoRoute = PagamentoRouteImport.update({
-  id: '/pagamento',
-  path: '/pagamento',
+const LearnRoute = LearnRouteImport.update({
+  id: '/learn',
+  path: '/learn',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PerfilRoute = PerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
+const MarketRoute = MarketRouteImport.update({
+  id: '/market',
+  path: '/market',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersRoute = OffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TestSocketRoute = TestSocketRouteImport.update({
@@ -58,80 +77,113 @@ const TestSocketRoute = TestSocketRouteImport.update({
   path: '/test-socket',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/aprenda': typeof AprendaRoute
-  '/carrinho': typeof CarrinhoRoute
-  '/criadores': typeof CriadoresRoute
-  '/mercado': typeof MercadoRoute
-  '/pagamento': typeof PagamentoRoute
-  '/perfil': typeof PerfilRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRoute
+  '/creators': typeof CreatorsRoute
+  '/downloads': typeof DownloadsRoute
+  '/learn': typeof LearnRoute
+  '/market': typeof MarketRoute
+  '/offers': typeof OffersRoute
+  '/profile': typeof ProfileRoute
+  '/support': typeof SupportRoute
   '/test-socket': typeof TestSocketRoute
+  '/wishlist': typeof WishlistRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/aprenda': typeof AprendaRoute
-  '/carrinho': typeof CarrinhoRoute
-  '/criadores': typeof CriadoresRoute
-  '/mercado': typeof MercadoRoute
-  '/pagamento': typeof PagamentoRoute
-  '/perfil': typeof PerfilRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRoute
+  '/creators': typeof CreatorsRoute
+  '/downloads': typeof DownloadsRoute
+  '/learn': typeof LearnRoute
+  '/market': typeof MarketRoute
+  '/offers': typeof OffersRoute
+  '/profile': typeof ProfileRoute
+  '/support': typeof SupportRoute
   '/test-socket': typeof TestSocketRoute
+  '/wishlist': typeof WishlistRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/aprenda': typeof AprendaRoute
-  '/carrinho': typeof CarrinhoRoute
-  '/criadores': typeof CriadoresRoute
-  '/mercado': typeof MercadoRoute
-  '/pagamento': typeof PagamentoRoute
-  '/perfil': typeof PerfilRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRoute
+  '/creators': typeof CreatorsRoute
+  '/downloads': typeof DownloadsRoute
+  '/learn': typeof LearnRoute
+  '/market': typeof MarketRoute
+  '/offers': typeof OffersRoute
+  '/profile': typeof ProfileRoute
+  '/support': typeof SupportRoute
   '/test-socket': typeof TestSocketRoute
+  '/wishlist': typeof WishlistRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/aprenda'
-    | '/carrinho'
-    | '/criadores'
-    | '/mercado'
-    | '/pagamento'
-    | '/perfil'
+    | '/cart'
+    | '/checkout'
+    | '/creators'
+    | '/downloads'
+    | '/learn'
+    | '/market'
+    | '/offers'
+    | '/profile'
+    | '/support'
     | '/test-socket'
+    | '/wishlist'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/aprenda'
-    | '/carrinho'
-    | '/criadores'
-    | '/mercado'
-    | '/pagamento'
-    | '/perfil'
+    | '/cart'
+    | '/checkout'
+    | '/creators'
+    | '/downloads'
+    | '/learn'
+    | '/market'
+    | '/offers'
+    | '/profile'
+    | '/support'
     | '/test-socket'
+    | '/wishlist'
   id:
     | '__root__'
     | '/'
-    | '/aprenda'
-    | '/carrinho'
-    | '/criadores'
-    | '/mercado'
-    | '/pagamento'
-    | '/perfil'
+    | '/cart'
+    | '/checkout'
+    | '/creators'
+    | '/downloads'
+    | '/learn'
+    | '/market'
+    | '/offers'
+    | '/profile'
+    | '/support'
     | '/test-socket'
+    | '/wishlist'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AprendaRoute: typeof AprendaRoute
-  CarrinhoRoute: typeof CarrinhoRoute
-  CriadoresRoute: typeof CriadoresRoute
-  MercadoRoute: typeof MercadoRoute
-  PagamentoRoute: typeof PagamentoRoute
-  PerfilRoute: typeof PerfilRoute
+  CartRoute: typeof CartRoute
+  CheckoutRoute: typeof CheckoutRoute
+  CreatorsRoute: typeof CreatorsRoute
+  DownloadsRoute: typeof DownloadsRoute
+  LearnRoute: typeof LearnRoute
+  MarketRoute: typeof MarketRoute
+  OffersRoute: typeof OffersRoute
+  ProfileRoute: typeof ProfileRoute
+  SupportRoute: typeof SupportRoute
   TestSocketRoute: typeof TestSocketRoute
+  WishlistRoute: typeof WishlistRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -143,46 +195,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/aprenda': {
-      id: '/aprenda'
-      path: '/aprenda'
-      fullPath: '/aprenda'
-      preLoaderRoute: typeof AprendaRouteImport
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/carrinho': {
-      id: '/carrinho'
-      path: '/carrinho'
-      fullPath: '/carrinho'
-      preLoaderRoute: typeof CarrinhoRouteImport
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/criadores': {
-      id: '/criadores'
-      path: '/criadores'
-      fullPath: '/criadores'
-      preLoaderRoute: typeof CriadoresRouteImport
+    '/creators': {
+      id: '/creators'
+      path: '/creators'
+      fullPath: '/creators'
+      preLoaderRoute: typeof CreatorsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mercado': {
-      id: '/mercado'
-      path: '/mercado'
-      fullPath: '/mercado'
-      preLoaderRoute: typeof MercadoRouteImport
+    '/downloads': {
+      id: '/downloads'
+      path: '/downloads'
+      fullPath: '/downloads'
+      preLoaderRoute: typeof DownloadsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pagamento': {
-      id: '/pagamento'
-      path: '/pagamento'
-      fullPath: '/pagamento'
-      preLoaderRoute: typeof PagamentoRouteImport
+    '/learn': {
+      id: '/learn'
+      path: '/learn'
+      fullPath: '/learn'
+      preLoaderRoute: typeof LearnRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/perfil': {
-      id: '/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof PerfilRouteImport
+    '/market': {
+      id: '/market'
+      path: '/market'
+      fullPath: '/market'
+      preLoaderRoute: typeof MarketRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers': {
+      id: '/offers'
+      path: '/offers'
+      fullPath: '/offers'
+      preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/test-socket': {
@@ -192,18 +265,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestSocketRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AprendaRoute: AprendaRoute,
-  CarrinhoRoute: CarrinhoRoute,
-  CriadoresRoute: CriadoresRoute,
-  MercadoRoute: MercadoRoute,
-  PagamentoRoute: PagamentoRoute,
-  PerfilRoute: PerfilRoute,
+  CartRoute: CartRoute,
+  CheckoutRoute: CheckoutRoute,
+  CreatorsRoute: CreatorsRoute,
+  DownloadsRoute: DownloadsRoute,
+  LearnRoute: LearnRoute,
+  MarketRoute: MarketRoute,
+  OffersRoute: OffersRoute,
+  ProfileRoute: ProfileRoute,
+  SupportRoute: SupportRoute,
   TestSocketRoute: TestSocketRoute,
+  WishlistRoute: WishlistRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

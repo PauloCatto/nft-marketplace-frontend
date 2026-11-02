@@ -5,7 +5,18 @@ export const AUTH_TOKEN_KEY = 'jungle_auth_token';
 
 export interface RequireAuthDetail {
   message?: string;
-  redirectTo?: '/carrinho' | '/pagamento' | '/perfil' | '/mercado' | '/';
+  redirectTo?:
+    | '/cart'
+    | '/checkout'
+    | '/profile'
+    | '/market'
+    | '/wishlist'
+    | '/offers'
+    | '/downloads'
+    | '/support'
+    | '/creators'
+    | '/learn'
+    | '/';
   onSuccess?: () => void;
 }
 

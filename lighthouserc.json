@@ -4,9 +4,9 @@
       "startServerCommand": "npm run preview",
       "url": [
         "http://localhost:4173/",
-        "http://localhost:4173/mercado?nftId=nft-1",
-        "http://localhost:4173/carrinho",
-        "http://localhost:4173/pagamento"
+        "http://localhost:4173/market?nftId=nft-1",
+        "http://localhost:4173/cart",
+        "http://localhost:4173/checkout"
       ],
       "numberOfRuns": 1
     },
