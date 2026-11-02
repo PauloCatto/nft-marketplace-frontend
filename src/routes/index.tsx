@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, stripSearchParams, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { io } from 'socket.io-client';
 import {
   ChevronRight,
   ChevronLeft,
@@ -31,11 +30,21 @@ import {
   type NftUpdatedEvent,
   type User as UserType,
 } from '../api/contracts';
-import { JUNGLE_WS_URL } from '../mocks/socket/socketHandler';
+import { createJungleSocket } from '../mocks/socket/socketHandler';
 import { db } from '../mocks/db';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { AuthModal } from '../components/auth/AuthModal';
+
+const defaultCatalogSearch: CatalogQueryParams = {
+  search: '',
+  category: 'All',
+  network: 'All',
+  tab: 'all',
+  sort: 'newest',
+  page: 1,
+  limit: 9,
+};
 
 export const Route = createFileRoute('/')({
   validateSearch: (search: Record<string, unknown>): CatalogQueryParams => {
@@ -52,16 +61,15 @@ export const Route = createFileRoute('/')({
       return parsed.data;
     }
     return {
-      search: '',
-      category: 'All',
-      network: 'All',
+      ...defaultCatalogSearch,
       tab: savedPrefs.tab || 'all',
       sort: savedPrefs.sort || 'newest',
       minPrice: savedPrefs.minPrice,
       maxPrice: savedPrefs.maxPrice,
-      page: 1,
-      limit: 9,
     };
+  },
+  search: {
+    middlewares: [stripSearchParams(defaultCatalogSearch)],
   },
   component: HomeDiscoveryPage,
 });
@@ -279,6 +287,7 @@ function HomeDiscoveryPage() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [selectedArticle, setSelectedArticle] = useState<EditorialPost | null>(null);
   const [mobileSearchInput, setMobileSearchInput] = useState(activeSearch);
+  const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'catalog' | 'favorites'>('catalog');
@@ -407,10 +416,7 @@ function HomeDiscoveryPage() {
   }, [mobileSearchInput, activeSearch, navigate]);
 
   useEffect(() => {
-    const socket = io(JUNGLE_WS_URL, {
-      transports: ['websocket'],
-      autoConnect: true,
-    });
+    const socket = createJungleSocket();
 
     socket.on('nft.updated', (event: NftUpdatedEvent) => {
       queryClient.setQueriesData<NFTListResponse>({ queryKey: ['nfts'] }, (oldData) => {
@@ -581,6 +587,8 @@ function HomeDiscoveryPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            (document.activeElement as HTMLElement | null)?.blur();
+            setIsMobileSearchFocused(false);
             updateFilters({ search: mobileSearchInput.trim(), page: 1 });
           }}
           className="flex items-center gap-3"
@@ -589,10 +597,14 @@ function HomeDiscoveryPage() {
             <Search className="w-4 h-4 text-[#C68E5D] shrink-0" />
             <input
               type="text"
+              enterKeyHint="search"
+              spellCheck={false}
               value={mobileSearchInput}
+              onFocus={() => setIsMobileSearchFocused(true)}
+              onBlur={() => setIsMobileSearchFocused(false)}
               onChange={(e) => setMobileSearchInput(e.target.value)}
               placeholder="Explorar coleções"
-              className="w-full bg-transparent text-xs text-[#FAF5F0] placeholder-[#C68E5D] outline-none"
+              className="w-full bg-transparent text-[16px] leading-none text-[#FAF5F0] placeholder-[#C68E5D] outline-none focus-visible:!outline-none"
             />
             {mobileSearchInput && (
               <button
@@ -604,14 +616,18 @@ function HomeDiscoveryPage() {
                 }}
                 className="text-[#C68E5D] hover:text-[#FAF5F0] p-0.5 cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
           <button
             type="button"
             aria-label="Filtrar coleções"
-            onClick={() => setIsMobileFilterOpen((prev) => !prev)}
+            onClick={() => {
+              (document.activeElement as HTMLElement | null)?.blur();
+              setIsMobileSearchFocused(false);
+              setIsMobileFilterOpen((prev) => !prev);
+            }}
             className="w-11 h-11 rounded-[12px] bg-[#C87D3B] hover:bg-[#D1823C] text-[#140D0A] flex items-center justify-center shrink-0 transition-colors cursor-pointer"
           >
             <SlidersHorizontal className="w-4 h-4 stroke-[2.2]" />
@@ -619,60 +635,184 @@ function HomeDiscoveryPage() {
         </form>
 
         {isMobileFilterOpen && (
-          <div className="mt-3 bg-[#1F1510] border border-[#2C1E16] rounded-xl p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#FAF5F0]">Faixa de preço</span>
-              <span className="text-[11px] text-[#C2B2A6]">
-                {formatPriceLabel(minPriceInput)} – {formatPriceLabel(maxPriceInput)} ETH
+          <div className="mt-3 bg-[#1F1510] border border-[#3D2A1E] rounded-2xl p-4 flex flex-col gap-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-[#2C1E16] pb-2.5">
+              <span className="text-xs font-extrabold text-[#FAF5F0] uppercase tracking-wider">
+                Filtrar Catálogo
               </span>
+              <button
+                type="button"
+                aria-label="Fechar filtros mobile"
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="w-6 h-6 rounded-full bg-[#2A1C15] text-[#C2B2A6] hover:text-[#FAF5F0] flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <div className="relative h-4 flex items-center">
-              <div className="w-full h-1 bg-[#3D2A1E] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#D1823C]"
-                  style={{
-                    marginLeft: `${Math.min(100, (minPriceInput / 12.5) * 100)}%`,
-                    width: `${Math.max(5, ((maxPriceInput - minPriceInput) / 12.5) * 100)}%`,
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-bold text-[#C2B2A6]">Categoria</span>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { id: 'All', label: 'Todas' },
+                  { id: 'Arte digital', label: 'Arte digital' },
+                  { id: 'Colecionáveis', label: 'Colecionáveis' },
+                  { id: 'Música', label: 'Música' },
+                  { id: 'Fotografia', label: 'Fotografia' },
+                  { id: 'Jogos', label: 'Jogos' },
+                ].map((cat) => {
+                  const isSelected = activeCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() =>
+                        updateFilters({
+                          category: cat.id as CatalogQueryParams['category'],
+                          page: 1,
+                        })
+                      }
+                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${isSelected
+                          ? 'bg-[#D1823C] text-[#140D0A] font-bold'
+                          : 'bg-[#140D0A] border border-[#2C1E16] text-[#C2B2A6]'
+                        }`}
+                    >
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-bold text-[#C2B2A6]">Ordenar por</span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { id: 'newest', label: 'Mais recentes' },
+                  { id: 'price_asc', label: 'Menor preço' },
+                  { id: 'price_desc', label: 'Maior preço' },
+                ].map((sortOpt) => {
+                  const isSelected = activeSort === sortOpt.id;
+                  return (
+                    <button
+                      key={sortOpt.id}
+                      type="button"
+                      onClick={() =>
+                        updateFilters({
+                          sort: sortOpt.id as CatalogQueryParams['sort'],
+                          page: 1,
+                        })
+                      }
+                      className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold text-center transition-colors cursor-pointer ${isSelected
+                          ? 'bg-[#D1823C] text-[#140D0A] font-bold'
+                          : 'bg-[#140D0A] border border-[#2C1E16] text-[#C2B2A6]'
+                        }`}
+                    >
+                      {sortOpt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#C2B2A6]">Faixa de preço</span>
+                <span className="text-[11px] font-bold text-[#D1823C]">
+                  {formatPriceLabel(minPriceInput)} – {formatPriceLabel(maxPriceInput)} ETH
+                </span>
+              </div>
+
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { label: 'Todos', min: 0.02, max: 12.5 },
+                  { label: 'Até 1 ETH', min: 0.02, max: 1.0 },
+                  { label: '1–3 ETH', min: 1.0, max: 3.0 },
+                  { label: '3+ ETH', min: 3.0, max: 12.5 },
+                ].map((preset) => {
+                  const isActivePreset =
+                    Math.abs(minPriceInput - preset.min) < 0.05 &&
+                    Math.abs(maxPriceInput - preset.max) < 0.05;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        setMinPriceInput(preset.min);
+                        setMaxPriceInput(preset.max);
+                      }}
+                      className={`py-1.5 rounded-lg text-[10.5px] font-semibold transition-colors cursor-pointer ${isActivePreset
+                          ? 'bg-[#D1823C]/20 border border-[#D1823C] text-[#D1823C] font-bold'
+                          : 'bg-[#140D0A] border border-[#2C1E16] text-[#C2B2A6]'
+                        }`}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="relative h-5 flex items-center mt-1">
+                <div className="w-full h-1.5 bg-[#3D2A1E] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#D1823C]"
+                    style={{
+                      marginLeft: `${Math.min(100, (minPriceInput / 12.5) * 100)}%`,
+                      width: `${Math.max(5, ((maxPriceInput - minPriceInput) / 12.5) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <input
+                  type="range"
+                  aria-label="Preço mínimo mobile em ETH"
+                  min={0.02}
+                  max={12.5}
+                  step={0.05}
+                  value={minPriceInput}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setMinPriceInput(Math.min(val, maxPriceInput));
                   }}
+                  className="kurio-range absolute inset-0 w-full h-full"
+                />
+                <input
+                  type="range"
+                  aria-label="Preço máximo mobile em ETH"
+                  min={0.02}
+                  max={12.5}
+                  step={0.05}
+                  value={maxPriceInput}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setMaxPriceInput(Math.max(val, minPriceInput));
+                  }}
+                  className="kurio-range absolute inset-0 w-full h-full"
                 />
               </div>
-              <input
-                type="range"
-                aria-label="Preço mínimo mobile em ETH"
-                min={0.02}
-                max={12.5}
-                step={0.05}
-                value={minPriceInput}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setMinPriceInput(Math.min(val, maxPriceInput));
-                }}
-                className="kurio-range absolute inset-0 w-full h-full"
-              />
-              <input
-                type="range"
-                aria-label="Preço máximo mobile em ETH"
-                min={0.02}
-                max={12.5}
-                step={0.05}
-                value={maxPriceInput}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setMaxPriceInput(Math.max(val, minPriceInput));
-                }}
-                className="kurio-range absolute inset-0 w-full h-full"
-              />
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                handleApplyPriceRange();
-                setIsMobileFilterOpen(false);
-              }}
-              className="bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-[11px] px-4 py-1.5 rounded w-fit transition-colors cursor-pointer"
-            >
-              Aplicar
-            </button>
+
+            <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#2C1E16]">
+              <button
+                type="button"
+                onClick={() => {
+                  handleResetAllFilters();
+                  setIsMobileFilterOpen(false);
+                }}
+                className="flex-1 py-2 rounded-lg border border-[#3D2A1E] text-[#C2B2A6] hover:text-[#FAF5F0] text-xs font-bold transition-colors cursor-pointer"
+              >
+                Limpar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleApplyPriceRange();
+                  setIsMobileFilterOpen(false);
+                }}
+                className="flex-1 py-2 rounded-lg bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-extrabold text-xs transition-colors cursor-pointer"
+              >
+                Aplicar
+              </button>
+            </div>
           </div>
         )}
 
@@ -741,9 +881,8 @@ function HomeDiscoveryPage() {
                   type="button"
                   aria-label={`Slide ${idx + 1}`}
                   onClick={() => setHeroIndex(idx)}
-                  className={`transition-all cursor-pointer ${
-                    heroIndex === idx ? 'w-5 h-1.5 bg-[#D1823C] rounded-full' : 'w-1.5 h-1.5 bg-[#D1823C]/50 rounded-full'
-                  }`}
+                  className={`transition-all cursor-pointer ${heroIndex === idx ? 'w-5 h-1.5 bg-[#D1823C] rounded-full' : 'w-1.5 h-1.5 bg-[#D1823C]/50 rounded-full'
+                    }`}
                 />
               ))}
             </div>
@@ -781,9 +920,8 @@ function HomeDiscoveryPage() {
                     page: 1,
                   })
                 }
-                className={`relative pb-1.5 text-[12px] whitespace-nowrap font-medium transition-colors cursor-pointer ${
-                  isActive ? 'text-[#D1823C] font-bold' : 'text-[#FAF5F0]'
-                }`}
+                className={`relative pb-1.5 text-[12px] whitespace-nowrap font-medium transition-colors cursor-pointer ${isActive ? 'text-[#D1823C] font-bold' : 'text-[#FAF5F0]'
+                  }`}
               >
                 {tabItem.label}
                 {isActive && (
@@ -924,11 +1062,10 @@ function HomeDiscoveryPage() {
                         className="absolute top-3.5 right-3.5 z-10 w-7 h-7 rounded-full bg-[#24160F]/90 border border-[#4A3222] flex items-center justify-center text-[#D1823C] cursor-pointer"
                       >
                         <Heart
-                          className={`w-3.5 h-3.5 ${
-                            isFav
+                          className={`w-3.5 h-3.5 ${isFav
                               ? 'fill-[#D1823C] text-[#D1823C]'
                               : 'text-[#D1823C]'
-                          }`}
+                            }`}
                         />
                       </button>
 
@@ -1001,11 +1138,10 @@ function HomeDiscoveryPage() {
                         className="absolute top-3.5 right-3.5 z-10 w-7 h-7 rounded-full bg-[#24160F]/90 border border-[#4A3222] flex items-center justify-center text-[#D1823C] cursor-pointer"
                       >
                         <Heart
-                          className={`w-3.5 h-3.5 ${
-                            isFav
+                          className={`w-3.5 h-3.5 ${isFav
                               ? 'fill-[#D1823C] text-[#D1823C]'
                               : 'text-[#D1823C]'
-                          }`}
+                            }`}
                         />
                       </button>
 
@@ -1044,7 +1180,8 @@ function HomeDiscoveryPage() {
 
         <nav
           aria-label="Navegação inferior mobile"
-          className="fixed bottom-0 left-0 right-0 z-40 h-[72px] bg-[#22150E] rounded-t-[26px] border-t border-[#332016] px-7 flex items-center justify-between shadow-[0_-8px_24px_rgba(0,0,0,0.45)]"
+          className={`fixed bottom-0 left-0 right-0 z-40 h-[72px] bg-[#22150E] rounded-t-[26px] border-t border-[#332016] px-7 items-center justify-between shadow-[0_-8px_24px_rgba(0,0,0,0.45)] ${isMobileSearchFocused ? 'hidden' : 'flex'
+            }`}
         >
           <div className="flex items-center gap-10">
             <button
@@ -1054,9 +1191,8 @@ function HomeDiscoveryPage() {
                 setMobileView('catalog');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`p-1.5 transition-colors cursor-pointer ${
-                mobileView === 'catalog' ? 'text-[#D1823C]' : 'text-[#C8A992] hover:text-[#D1823C]'
-              }`}
+              className={`p-1.5 transition-colors cursor-pointer ${mobileView === 'catalog' ? 'text-[#D1823C]' : 'text-[#C8A992] hover:text-[#D1823C]'
+                }`}
             >
               <Home className={`w-5 h-5 ${mobileView === 'catalog' ? 'fill-[#D1823C]' : ''}`} />
             </button>
@@ -1073,9 +1209,8 @@ function HomeDiscoveryPage() {
                 }
                 setMobileView('favorites');
               }}
-              className={`p-1.5 transition-colors cursor-pointer relative ${
-                mobileView === 'favorites' ? 'text-[#D1823C]' : 'text-[#C8A992] hover:text-[#D1823C]'
-              }`}
+              className={`p-1.5 transition-colors cursor-pointer relative ${mobileView === 'favorites' ? 'text-[#D1823C]' : 'text-[#C8A992] hover:text-[#D1823C]'
+                }`}
             >
               <Heart className={`w-5 h-5 ${mobileView === 'favorites' ? 'fill-[#D1823C]' : ''}`} />
               {(favoritesData?.nftIds?.length || 0) > 0 && (
@@ -1101,9 +1236,8 @@ function HomeDiscoveryPage() {
             {sessionData?.user ? (
               <Link
                 to="/cart"
-                aria-label={`Carrinho de compras com ${mobileCartCount} ${
-                  mobileCartCount === 1 ? 'item' : 'itens'
-                }`}
+                aria-label={`Carrinho de compras com ${mobileCartCount} ${mobileCartCount === 1 ? 'item' : 'itens'
+                  }`}
                 className="relative text-[#C8A992] hover:text-[#D1823C] p-1.5 transition-colors"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -1216,11 +1350,10 @@ function HomeDiscoveryPage() {
                     aria-selected={heroIndex === idx}
                     aria-label={`Mostrar destaque ${idx + 1}: ${slide.titleLine1}`}
                     onClick={() => setHeroIndex(idx)}
-                    className={`transition-all cursor-pointer ${
-                      heroIndex === idx
+                    className={`transition-all cursor-pointer ${heroIndex === idx
                         ? 'w-6 h-2 bg-[#D1823C] rounded-full'
                         : 'w-2 h-2 rounded-full bg-[#D1823C]/40 hover:bg-[#D1823C]/75'
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -1413,11 +1546,10 @@ function HomeDiscoveryPage() {
                               page: 1,
                             })
                           }
-                          className={`relative pb-1.5 text-[11px] whitespace-nowrap font-medium transition-colors cursor-pointer ${
-                            isActive
+                          className={`relative pb-1.5 text-[11px] whitespace-nowrap font-medium transition-colors cursor-pointer ${isActive
                               ? 'text-[#D1823C] font-bold'
                               : 'text-[#FAF5F0] hover:text-[#D1823C]'
-                          }`}
+                            }`}
                         >
                           {tabItem.label}
                           {isActive && (
@@ -1459,79 +1591,79 @@ function HomeDiscoveryPage() {
                   activeNetwork !== 'All' ||
                   Boolean(searchParams.minPrice) ||
                   Boolean(searchParams.maxPrice)) && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 bg-[#1F1510] border border-[#2C1E16] rounded-lg px-3.5 py-2">
-                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                      <span className="text-[#9A8473]">
-                        {catalogData?.total ?? 0}{' '}
-                        {(catalogData?.total ?? 0) === 1 ? 'NFT encontrado' : 'NFTs encontrados'}:
-                      </span>
-                      {activeSearch && (
-                        <button
-                          type="button"
-                          onClick={() => updateFilters({ search: '', page: 1 })}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
-                        >
-                          <span>Busca: &ldquo;{activeSearch}&rdquo;</span>
-                          <X className="w-3 h-3 text-[#D1823C]" />
-                        </button>
-                      )}
-                      {(searchParams.minPrice || searchParams.maxPrice) && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMinPriceInput(0.02);
-                            setMaxPriceInput(12.5);
-                            const clearedPrice = { minPrice: undefined, maxPrice: undefined };
-                            db.updateCatalogPreferences(clearedPrice);
-                            void apiClient.put('/nfts/preferences', clearedPrice);
-                            navigate({
-                              search: (prev) => ({
-                                ...prev,
-                                minPrice: undefined,
-                                maxPrice: undefined,
-                                page: 1,
-                              }),
-                            });
-                          }}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
-                        >
-                          <span>
-                            Preço: {formatPriceLabel(Number(searchParams.minPrice || 0.02))} –{' '}
-                            {formatPriceLabel(Number(searchParams.maxPrice || 12.5))} ETH
-                          </span>
-                          <X className="w-3 h-3 text-[#D1823C]" />
-                        </button>
-                      )}
-                      {activeCategory !== 'All' && (
-                        <button
-                          type="button"
-                          onClick={() => updateFilters({ category: 'All', page: 1 })}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
-                        >
-                          <span>Coleção: {activeCategory}</span>
-                          <X className="w-3 h-3 text-[#D1823C]" />
-                        </button>
-                      )}
-                      {activeNetwork !== 'All' && (
-                        <button
-                          type="button"
-                          onClick={() => updateFilters({ network: 'All', page: 1 })}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
-                        >
-                          <span>Rede: {activeNetwork}</span>
-                          <X className="w-3 h-3 text-[#D1823C]" />
-                        </button>
-                      )}
+                    <div className="flex flex-wrap items-center justify-between gap-2 bg-[#1F1510] border border-[#2C1E16] rounded-lg px-3.5 py-2">
+                      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                        <span className="text-[#9A8473]">
+                          {catalogData?.total ?? 0}{' '}
+                          {(catalogData?.total ?? 0) === 1 ? 'NFT encontrado' : 'NFTs encontrados'}:
+                        </span>
+                        {activeSearch && (
+                          <button
+                            type="button"
+                            onClick={() => updateFilters({ search: '', page: 1 })}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
+                          >
+                            <span>Busca: &ldquo;{activeSearch}&rdquo;</span>
+                            <X className="w-3 h-3 text-[#D1823C]" />
+                          </button>
+                        )}
+                        {(searchParams.minPrice || searchParams.maxPrice) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMinPriceInput(0.02);
+                              setMaxPriceInput(12.5);
+                              const clearedPrice = { minPrice: undefined, maxPrice: undefined };
+                              db.updateCatalogPreferences(clearedPrice);
+                              void apiClient.put('/nfts/preferences', clearedPrice);
+                              navigate({
+                                search: (prev) => ({
+                                  ...prev,
+                                  minPrice: undefined,
+                                  maxPrice: undefined,
+                                  page: 1,
+                                }),
+                              });
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
+                          >
+                            <span>
+                              Preço: {formatPriceLabel(Number(searchParams.minPrice || 0.02))} –{' '}
+                              {formatPriceLabel(Number(searchParams.maxPrice || 12.5))} ETH
+                            </span>
+                            <X className="w-3 h-3 text-[#D1823C]" />
+                          </button>
+                        )}
+                        {activeCategory !== 'All' && (
+                          <button
+                            type="button"
+                            onClick={() => updateFilters({ category: 'All', page: 1 })}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
+                          >
+                            <span>Coleção: {activeCategory}</span>
+                            <X className="w-3 h-3 text-[#D1823C]" />
+                          </button>
+                        )}
+                        {activeNetwork !== 'All' && (
+                          <button
+                            type="button"
+                            onClick={() => updateFilters({ network: 'All', page: 1 })}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
+                          >
+                            <span>Rede: {activeNetwork}</span>
+                            <X className="w-3 h-3 text-[#D1823C]" />
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleResetAllFilters}
+                        className="text-[11px] font-semibold text-[#D1823C] hover:underline cursor-pointer"
+                      >
+                        Limpar tudo
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleResetAllFilters}
-                      className="text-[11px] font-semibold text-[#D1823C] hover:underline cursor-pointer"
-                    >
-                      Limpar tudo
-                    </button>
-                  </div>
-                )}
+                  )}
 
                 {(isLoading || isFetching) && (
                   <div
@@ -1630,11 +1762,10 @@ function HomeDiscoveryPage() {
                               className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-[#24160F]/90 hover:bg-[#140D0A] border border-[#4A3222] hover:border-[#D1823C] flex items-center justify-center text-[#D1823C] transition-all cursor-pointer"
                             >
                               <Heart
-                                className={`w-3.5 h-3.5 ${
-                                  isDesktopFav
+                                className={`w-3.5 h-3.5 ${isDesktopFav
                                     ? 'fill-[#D1823C] text-[#D1823C]'
                                     : 'text-[#D1823C]'
-                                }`}
+                                  }`}
                               />
                             </button>
 
@@ -1710,11 +1841,10 @@ function HomeDiscoveryPage() {
                           aria-current={isCurrent ? 'page' : undefined}
                           aria-label={`Página ${pageNum}`}
                           onClick={() => updateFilters({ page: pageNum })}
-                          className={`w-8 h-8 rounded text-xs font-bold flex items-center justify-center transition-colors cursor-pointer ${
-                            isCurrent
+                          className={`w-8 h-8 rounded text-xs font-bold flex items-center justify-center transition-colors cursor-pointer ${isCurrent
                               ? 'bg-[#D1823C] text-[#140D0A]'
                               : 'border border-[#4A3322] text-[#FAF5F0] hover:border-[#D1823C] hover:text-[#D1823C]'
-                          }`}
+                            }`}
                         >
                           {pageNum}
                         </button>
@@ -1821,45 +1951,45 @@ function HomeDiscoveryPage() {
               </div>
 
               <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {EDITORIAL_POSTS.map((post) => (
-                <article
-                  key={post.id}
-                  className="bg-[#1F1510] border border-[#2C1E16] rounded-xl overflow-hidden flex flex-col justify-between hover:border-[#D1823C]/40 transition-colors"
-                >
-                  <div>
-                    <div className="w-full aspect-[4/3] overflow-hidden bg-[#140D0A]">
-                      <img
-                        src={post.imageUrl}
-                        alt={post.title}
-                        width={280}
-                        height={210}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-4 flex flex-col gap-2">
-                      <div className="text-[#D1823C] text-[10px] font-medium">
-                        {post.date} &nbsp;|&nbsp; {post.readTime}
+                {EDITORIAL_POSTS.map((post) => (
+                  <article
+                    key={post.id}
+                    className="bg-[#1F1510] border border-[#2C1E16] rounded-xl overflow-hidden flex flex-col justify-between hover:border-[#D1823C]/40 transition-colors"
+                  >
+                    <div>
+                      <div className="w-full aspect-[4/3] overflow-hidden bg-[#140D0A]">
+                        <img
+                          src={post.imageUrl}
+                          alt={post.title}
+                          width={280}
+                          height={210}
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <h3 className="text-[#FAF5F0] font-bold text-xs sm:text-[13px] leading-snug">
-                        {post.title}
-                      </h3>
-                      <p className="text-[#A8968A] text-[11px] leading-relaxed">{post.excerpt}</p>
+                      <div className="p-4 flex flex-col gap-2">
+                        <div className="text-[#D1823C] text-[10px] font-medium">
+                          {post.date} &nbsp;|&nbsp; {post.readTime}
+                        </div>
+                        <h3 className="text-[#FAF5F0] font-bold text-xs sm:text-[13px] leading-snug">
+                          {post.title}
+                        </h3>
+                        <p className="text-[#A8968A] text-[11px] leading-relaxed">{post.excerpt}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="px-4 pb-4 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedArticle(post)}
-                      className="inline-flex items-center gap-1 text-[#C2B2A6] hover:text-[#D1823C] text-[11px] font-semibold transition-colors cursor-pointer"
-                    >
-                      <span>Ler mais</span>
-                      <span aria-hidden="true">→</span>
-                    </button>
-                  </div>
-                </article>
-              ))}
+                    <div className="px-4 pb-4 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedArticle(post)}
+                        className="inline-flex items-center gap-1 text-[#C2B2A6] hover:text-[#D1823C] text-[11px] font-semibold transition-colors cursor-pointer"
+                      >
+                        <span>Ler mais</span>
+                        <span aria-hidden="true">→</span>
+                      </button>
+                    </div>
+                  </article>
+                ))}
               </div>
             </div>
           </section>
