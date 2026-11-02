@@ -69,6 +69,7 @@ export default defineConfig([
       'no-inline-comments': 'error',
       'no-warning-comments': 'error',
       'clean-code/no-comments': 'error',
+      'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0, maxBOF: 0 }],
       'no-empty': ['error', { allowEmptyCatch: true }],
       'react-refresh/only-export-components': 'off',
       'react-hooks/set-state-in-effect': 'off',
