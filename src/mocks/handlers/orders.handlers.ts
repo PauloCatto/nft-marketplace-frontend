@@ -2,22 +2,31 @@ import { http, HttpResponse, delay } from 'msw';
 import Decimal from 'decimal.js';
 import { db } from '../db';
 import { scenarios } from '../scenarios';
-import { requireAuth } from './auth.handlers';
+import { getUserIdFromRequest, requireAuth } from './auth.handlers';
 import type { CreateOrderRequest } from '../../api/contracts';
 
 function hashPayload(payload: unknown): string {
   return JSON.stringify(payload);
 }
 
+function resolveOrderUser(request: Request): { userId: string; errorResponse?: Response } {
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const auth = requireAuth(request);
+    if (auth.errorResponse) return { userId: 'guest', errorResponse: auth.errorResponse };
+    return { userId: auth.userId };
+  }
+  return { userId: getUserIdFromRequest(request) || 'guest' };
+}
+
 export const orderHandlers = [
-  // POST */api/orders (Idempotente)
+  // POST */api/orders
   http.post('*/api/orders', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveOrderUser(request);
+    if (errorResponse) return errorResponse;
 
     const idempotencyKey = request.headers.get('Idempotency-Key');
     if (!idempotencyKey) {
@@ -164,14 +173,13 @@ export const orderHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveOrderUser(request);
+    if (errorResponse) return errorResponse;
 
     const { id } = params;
     const order = db.findOrderById(String(id));
 
-    if (!order || order.userId !== userId) {
+    if (!order || (order.userId !== userId && order.userId !== 'guest')) {
       return HttpResponse.json(
         { error: { code: 'NOT_FOUND', message: `Pedido ${id} não encontrado.` } },
         { status: 404 }
@@ -186,14 +194,13 @@ export const orderHandlers = [
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveOrderUser(request);
+    if (errorResponse) return errorResponse;
 
     const { id } = params;
     const order = db.findOrderById(String(id));
 
-    if (!order || order.userId !== userId || !order.receipt) {
+    if (!order || (order.userId !== userId && order.userId !== 'guest') || !order.receipt) {
       return HttpResponse.json(
         { error: { code: 'NOT_FOUND', message: `Recibo para o pedido ${id} não disponível.` } },
         { status: 404 }
