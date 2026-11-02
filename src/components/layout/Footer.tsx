@@ -125,47 +125,43 @@ export function Footer({ onSelectCategory }: FooterProps) {
             <ul className="space-y-2.5 text-xs text-[#A8968A]">
               <li>
                 <Link
-                  to="/perfil"
+                  to="/profile"
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Meu perfil
                 </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => handleOutOfScopeClick('Minha coleção')}
+                <Link
+                  to="/downloads"
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Minha coleção
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => handleOutOfScopeClick('Atividade')}
+                <Link
+                  to="/market"
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Atividade
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => handleOutOfScopeClick('Estúdio do criador')}
+                <Link
+                  to="/creators"
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Estúdio do criador
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => handleOutOfScopeClick('Lista de interesse')}
+                <Link
+                  to="/wishlist"
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Lista de interesse
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -176,49 +172,45 @@ export function Footer({ onSelectCategory }: FooterProps) {
             </h4>
             <ul className="space-y-2.5 text-xs text-[#A8968A]">
               <li>
-                <button
-                  type="button"
-                  onClick={() => handleOutOfScopeClick('Central de ajuda')}
+                <Link
+                  to="/support"
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Central de ajuda
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => handleOutOfScopeClick('Como comprar NFTs')}
+                <Link
+                  to="/learn"
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Como comprar NFTs
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => handleOutOfScopeClick('Carteira e segurança')}
+                <Link
+                  to="/profile"
+                  search={{ tab: 'wallets' }}
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Carteira e segurança
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => handleOutOfScopeClick('Política do mercado')}
+                <Link
+                  to="/learn"
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Política do mercado
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => handleOutOfScopeClick('Denunciar item')}
+                <Link
+                  to="/support"
                   className="hover:text-[#D1823C] transition-colors cursor-pointer"
                 >
                   Denunciar item
-                </button>
+                </Link>
               </li>
             </ul>
           </div>

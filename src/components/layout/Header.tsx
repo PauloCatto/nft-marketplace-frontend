@@ -179,13 +179,13 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
     searchInputRef.current?.focus();
   };
 
-  const isCreatorsActive = currentPath.startsWith('/criadores');
-  const isLearnActive = currentPath.startsWith('/aprenda');
+  const isCreatorsActive = currentPath.startsWith('/creators');
+  const isLearnActive = currentPath.startsWith('/learn');
 
   const isMarketActive =
-    currentPath.startsWith('/mercado') ||
-    currentPath.startsWith('/carrinho') ||
-    currentPath.startsWith('/pagamento');
+    currentPath.startsWith('/market') ||
+    currentPath.startsWith('/cart') ||
+    currentPath.startsWith('/checkout');
 
   return (
     <header className="w-full border-b border-[#2A1C15] pb-2.5 relative z-40">
@@ -216,7 +216,7 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
           </Link>
 
           <Link
-            to="/mercado"
+            to="/market"
             className={`relative py-1.5 text-xs font-medium transition-colors ${
               isMarketActive
                 ? 'text-[#D1823C] font-semibold'
@@ -233,7 +233,7 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
           </Link>
 
           <Link
-            to="/criadores"
+            to="/creators"
             className={`relative py-1.5 text-xs font-medium transition-colors ${
               isCreatorsActive
                 ? 'text-[#D1823C] font-semibold'
@@ -250,7 +250,7 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
           </Link>
 
           <Link
-            to="/aprenda"
+            to="/learn"
             className={`relative py-1.5 text-xs font-medium transition-colors ${
               isLearnActive
                 ? 'text-[#D1823C] font-semibold'
@@ -384,13 +384,13 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
                           tabIndex={0}
                           onClick={() => {
                             setIsDropdownOpen(false);
-                            navigate({ to: '/mercado', search: { id: nft.id } });
+                            navigate({ to: '/market', search: { id: nft.id } });
                           }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               setIsDropdownOpen(false);
-                              navigate({ to: '/mercado', search: { id: nft.id } });
+                              navigate({ to: '/market', search: { id: nft.id } });
                             }
                           }}
                           className="px-3.5 py-2.5 flex items-center justify-between gap-3 hover:bg-[#271810] transition-colors cursor-pointer group"
@@ -461,7 +461,7 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
 
           {currentUser ? (
             <Link
-              to="/carrinho"
+              to="/cart"
               aria-label={`Carrinho de compras com ${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`}
               className="relative p-2 text-[#FAF5F0] hover:text-[#D1823C] transition-colors cursor-pointer"
             >
@@ -502,11 +502,11 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
           {currentUser ? (
             <>
               <Link
-                to="/perfil"
+                to="/profile"
                 aria-label="Acessar Perfil do colecionador e Carteiras"
                 title="Meu perfil e Carteiras"
                 className={`p-2 transition-colors cursor-pointer ${
-                  currentPath.startsWith('/perfil')
+                  currentPath.startsWith('/profile')
                     ? 'text-[#D1823C]'
                     : 'text-[#FAF5F0] hover:text-[#D1823C]'
                 }`}
@@ -522,7 +522,7 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
                   queryClient.invalidateQueries({ queryKey: ['cart'] });
                   queryClient.invalidateQueries({ queryKey: ['favorites'] });
                   toast.info('Sessão encerrada.');
-                  if (currentPath.startsWith('/perfil')) {
+                  if (currentPath.startsWith('/profile')) {
                     navigate({ to: '/' });
                   }
                 }}
@@ -573,7 +573,7 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
             Início
           </Link>
           <Link
-            to="/mercado"
+            to="/market"
             onClick={() => setIsMobileMenuOpen(false)}
             className={`text-sm py-1.5 ${
               isMarketActive ? 'font-semibold text-[#D1823C]' : 'text-[#C2B2A6] hover:text-[#FAF5F0]'
@@ -582,7 +582,7 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
             Mercado
           </Link>
           <Link
-            to="/criadores"
+            to="/creators"
             onClick={() => setIsMobileMenuOpen(false)}
             className={`text-sm py-1.5 ${
               isCreatorsActive ? 'font-semibold text-[#D1823C]' : 'text-[#C2B2A6] hover:text-[#FAF5F0]'
@@ -591,7 +591,7 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
             Criadores
           </Link>
           <Link
-            to="/aprenda"
+            to="/learn"
             onClick={() => setIsMobileMenuOpen(false)}
             className={`text-sm py-1.5 ${
               isLearnActive ? 'font-semibold text-[#D1823C]' : 'text-[#C2B2A6] hover:text-[#FAF5F0]'

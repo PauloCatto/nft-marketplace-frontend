@@ -68,7 +68,7 @@ export function AuthModal({ isOpen, initialMode = 'login', onClose, onSuccess }:
     if (onSuccess) {
       onSuccess();
     } else {
-      navigate({ to: '/perfil' });
+      navigate({ to: '/profile' });
     }
   };
 
