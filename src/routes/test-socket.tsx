@@ -23,7 +23,7 @@ function SocketTestPage() {
 
     socket.on('connect', () => {
       setConnectionStatus('CONNECTED');
-      // Solicita ao servidor simulado a emissão do evento real nft.updated
+      
       socket.emit('trigger-nft-update', {
         nftId: 'nft-1',
         version: 2,
@@ -37,7 +37,7 @@ function SocketTestPage() {
     socket.on('nft.updated', (event: NftUpdatedEvent) => {
       setReceivedEvent(event);
 
-      // Validação estrita do payload e da versão do evento
+      
       const isValid =
         event.nftId === 'nft-1' &&
         event.version === 2 &&

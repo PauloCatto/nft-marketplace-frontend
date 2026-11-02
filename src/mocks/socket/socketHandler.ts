@@ -8,7 +8,7 @@ export const JUNGLE_WS_URL = 'wss://api.jungle.io';
 
 export const jungleWs = ws.link(/socket\.io/);
 
-// Armazena conexões ativas para despacho de eventos em tempo real
+
 const activeClients = new Set<ReturnType<typeof toSocketIo>>();
 
 export const socketHandler = jungleWs.addEventListener('connection', (connection) => {
@@ -23,7 +23,7 @@ export const socketHandler = jungleWs.addEventListener('connection', (connection
     io.client.emit('pong', { timestamp: new Date().toISOString() });
   });
 
-  // Permite ao cliente solicitar a emissão do evento nft.updated pelo servidor mock
+  
   io.client.on('trigger-nft-update', (_event, customPayload) => {
     const payload: NftUpdatedEvent = (customPayload as NftUpdatedEvent) || {
       nftId: 'nft-1',
@@ -38,7 +38,7 @@ export const socketHandler = jungleWs.addEventListener('connection', (connection
 });
 
 export function emitMockNftUpdated(event: NftUpdatedEvent): void {
-  // Sincroniza o estado do banco simulado para manter consistência entre REST e Socket.IO
+  
   const priceUsd = new Decimal(event.priceEth).times('3000').toFixed(2);
   db.updateNFT(event.nftId, {
     version: event.version,

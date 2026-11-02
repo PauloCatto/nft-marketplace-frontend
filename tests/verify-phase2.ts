@@ -12,9 +12,9 @@ async function runVerification() {
   scenarios.reset();
 
   try {
-    // -------------------------------------------------------------
-    // TESTE 1: Interceptação de Requisição Axios pelo MSW
-    // -------------------------------------------------------------
+    
+    
+    
     const nftsResponse = await apiClient.get('/nfts');
     if (nftsResponse.status === 200 && nftsResponse.data.items?.length === 8 && nftsResponse.data.total === 12) {
       console.log('   ✅ SUCESSO: MSW interceptou Axios e retornou os 12 NFTs paginados.');
@@ -22,11 +22,11 @@ async function runVerification() {
       throw new Error(`Falha no GET /api/nfts: ${JSON.stringify(nftsResponse.data)}`);
     }
 
-    // -------------------------------------------------------------
-    // TESTE 2: Autenticação Determinística e Isolamento de Usuários
-    // -------------------------------------------------------------
+    
+    
+    
 
-    // 2.1 Visitante sem token deve receber 401 nas rotas protegidas (sem fallback para user-alex)
+    
     delete apiClient.defaults.headers.common['Authorization'];
     try {
       await apiClient.get('/favorites');
@@ -39,7 +39,7 @@ async function runVerification() {
       }
     }
 
-    // 2.2 Login de Alex e configuração do token no apiClient
+    
     const loginAlex = await apiClient.post('/auth/login', {
       email: 'alex@jungle.io',
       password: 'Password123!',
@@ -66,10 +66,10 @@ async function runVerification() {
       throw new Error('Falha no isolamento de dados entre usuários');
     }
 
-    // -------------------------------------------------------------
-    // TESTE 3: Carrinho com NFT Real, Precisão Decimal.js e Cupom JUNGLE10
-    // -------------------------------------------------------------
-    // Alex inicia com nft-2 (1x 0.125 ETH) nas fixtures; adicionamos nft-1 (2x 0.450 ETH)
+    
+    
+    
+    
     const addCartRes = await apiClient.post('/cart/items', {
       nftId: 'nft-1',
       quantity: 2,
@@ -81,7 +81,7 @@ async function runVerification() {
     const quoteRes = await apiClient.post('/cart/quote', { couponCode: 'JUNGLE10' });
     const quote = quoteRes.data;
 
-    // Verificação independente usando Decimal.js sobre os itens retornados na cotação
+    
     const expectedSubtotal = quote.items.reduce(
       (acc: Decimal, item: { priceEth: string; quantity: number }) =>
         acc.plus(new Decimal(item.priceEth).times(item.quantity)),
@@ -110,9 +110,9 @@ async function runVerification() {
       throw new Error(`Falha na validação Decimal.js da cotação: ${JSON.stringify(quote)}`);
     }
 
-    // -------------------------------------------------------------
-    // TESTE 4: Idempotência de Pedidos, Preservação de Quote/Cupom e Conflitos (409)
-    // -------------------------------------------------------------
+    
+    
+    
     const testIdempotencyKey = `key-test-${Date.now()}`;
     const orderPayload = {
       quoteId: quote.quoteId,
@@ -120,7 +120,7 @@ async function runVerification() {
       network: 'Ethereum' as const,
     };
 
-    // 4.1 Teste de cenário editionSoldOut (409) antes de confirmar o pedido
+    
     scenarios.set({ editionSoldOut: true });
     try {
       await apiClient.post('/orders', orderPayload, {
@@ -136,7 +136,7 @@ async function runVerification() {
     }
     scenarios.reset();
 
-    // 4.2 Primeira tentativa válida -> 201 Created preservando quoteId e cupom
+    
     const order1 = await apiClient.post('/orders', orderPayload, {
       headers: { 'Idempotency-Key': testIdempotencyKey },
     });
@@ -152,7 +152,7 @@ async function runVerification() {
       throw new Error('Falha na criação do pedido ou na preservação do quoteId/cupom');
     }
 
-    // 4.3 Segunda tentativa com a MESMA chave e MESMO payload -> deve retornar 200 OK com o mesmo pedido
+    
     const order2 = await apiClient.post('/orders', orderPayload, {
       headers: { 'Idempotency-Key': testIdempotencyKey },
     });
@@ -162,7 +162,7 @@ async function runVerification() {
       throw new Error('Falha na recuperação idempotente do pedido');
     }
 
-    // 4.4 Terceira tentativa com a MESMA chave mas PAYLOAD DIFERENTE -> deve retornar 409 Conflict
+    
     try {
       await apiClient.post(
         '/orders',
@@ -178,9 +178,9 @@ async function runVerification() {
       }
     }
 
-    // -------------------------------------------------------------
-    // TESTE 5: Cenários Determinísticos (Rollback e Expiração de Sessão)
-    // -------------------------------------------------------------
+    
+    
+    
     scenarios.set({ failFavorites: true });
     try {
       await apiClient.post('/favorites/nft-2');
@@ -206,9 +206,9 @@ async function runVerification() {
     }
     scenarios.reset();
 
-    // -------------------------------------------------------------
-    // TESTE 6: Sincronização Socket.IO + Banco Simulado (REST <-> WS)
-    // -------------------------------------------------------------
+    
+    
+    
     emitMockNftUpdated({
       nftId: 'nft-1',
       version: 2,
@@ -274,9 +274,9 @@ async function runVerification() {
 
     await socketPromise;
 
-    // -------------------------------------------------------------
-    // TESTE 7: Reset Total do Banco de Dados
-    // -------------------------------------------------------------
+    
+    
+    
     db.resetDatabase();
     const cleanNFTs = db.getNFTs();
     if (cleanNFTs.length === 12 && cleanNFTs.find((n) => n.id === 'nft-1')?.priceEth === '0.450') {
