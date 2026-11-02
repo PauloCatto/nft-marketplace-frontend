@@ -1,10 +1,6 @@
 import { z } from 'zod';
 import type { EthAmount } from '../../types';
 
-
-
-
-
 export const loginSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
@@ -34,10 +30,6 @@ export interface AuthSessionResponse {
   user: User;
   expiresAt: string;
 }
-
-
-
-
 
 export interface NFTTrait {
   trait_type: string;
@@ -128,18 +120,10 @@ export interface NFTListResponse {
   totalPages: number;
 }
 
-
-
-
-
 export interface FavoritesResponse {
   items: NFT[];
   nftIds: string[];
 }
-
-
-
-
 
 export interface CartItem {
   nftId: string;
@@ -190,10 +174,6 @@ export const quoteRequestSchema = z.object({
 
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
 
-
-
-
-
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED';
 
 export const createOrderSchema = z.object({
@@ -233,10 +213,6 @@ export interface Order {
   createdAt: string;
   receipt?: Receipt;
 }
-
-
-
-
 
 export const updateProfileSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -278,10 +254,6 @@ export const updateWalletSchema = z.object({
 });
 
 export type UpdateWalletRequest = z.infer<typeof updateWalletSchema>;
-
-
-
-
 
 export interface NftUpdatedEvent {
   nftId: string;

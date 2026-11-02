@@ -22,7 +22,6 @@ export function useSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const socketRef = useRef<Socket>(getSocket());
-
   
   const versionsRef = useRef<Map<string, number>>(new Map());
 

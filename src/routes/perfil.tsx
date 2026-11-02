@@ -61,6 +61,7 @@ function CollectorProfilePage() {
   const [ensName, setEnsName] = useState('');
   const [walletNickname, setWalletNickname] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [profileFormError, setProfileFormError] = useState<string | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -81,25 +82,62 @@ function CollectorProfilePage() {
   const [wEnsPrefix, setWEnsPrefix] = useState('.eth');
   const [wEnsName, setWEnsName] = useState('');
   const [sameAsPrimary, setSameAsPrimary] = useState(false);
+  const [walletFormError, setWalletFormError] = useState<string | null>(null);
   const [secondaryWallets, setSecondaryWallets] = useState<
     Array<{ id: string; label: string; address: string; network: string }>
   >([]);
 
-  useQuery<UserType>({
+  const { data: profileData } = useQuery<UserType>({
     queryKey: ['profile'],
     queryFn: async ({ signal }) => {
       const res = await apiClient.get<UserType>('/profile', { signal });
       return res.data;
     },
+    retry: false,
   });
 
-  useQuery<{ items: Wallet[] }>({
+  const { data: walletsData } = useQuery<{ items: Wallet[] }>({
     queryKey: ['wallets'],
     queryFn: async ({ signal }) => {
       const res = await apiClient.get<{ items: Wallet[] }>('/wallets', { signal });
       return res.data;
     },
+    retry: false,
   });
+
+  useEffect(() => {
+    if (profileData) {
+      setDisplayName((prev) => prev || profileData.name || '');
+      setUsername((prev) => prev || profileData.name.toLowerCase().replace(/\s+/g, '.') || '');
+      setEmail((prev) => prev || profileData.email || '');
+      setAvatarUrl((prev) => prev || profileData.avatarUrl || '');
+      setWDisplayName((prev) => prev || profileData.name || '');
+      setWEmail((prev) => prev || profileData.email || '');
+    }
+  }, [profileData]);
+
+  useEffect(() => {
+    if (walletsData?.items && walletsData.items.length > 0) {
+      const primary = walletsData.items.find((w) => w.isPrimary) || walletsData.items[0];
+      if (primary) {
+        setWalletNickname((prev) => prev || primary.label || '');
+        setWNickname((prev) => prev || primary.label || '');
+        setWAddress((prev) => prev || primary.address || '');
+        setWNetwork((prev) => prev || primary.network || 'Ethereum');
+      }
+      const secondaries = walletsData.items.filter((w) => !w.isPrimary);
+      if (secondaries.length > 0) {
+        setSecondaryWallets(
+          secondaries.map((sw) => ({
+            id: sw.id,
+            label: sw.label,
+            address: sw.address,
+            network: sw.network,
+          }))
+        );
+      }
+    }
+  }, [walletsData]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -114,7 +152,7 @@ function CollectorProfilePage() {
         avatarUrl: avatarUrl || undefined,
       });
 
-      if (currentPassword && newPassword) {
+      if (currentPassword || newPassword) {
         await apiClient.put('/profile/password', {
           currentPassword,
           newPassword,
@@ -124,6 +162,7 @@ function CollectorProfilePage() {
       return profileRes.data;
     },
     onSuccess: (updatedUser) => {
+      setProfileFormError(null);
       queryClient.setQueryData(['profile'], updatedUser);
       queryClient.setQueryData(['auth', 'me'], { user: updatedUser });
       setCurrentPassword('');
@@ -132,6 +171,7 @@ function CollectorProfilePage() {
       toast.success('Dados do perfil salvos com sucesso!');
     },
     onError: () => {
+      setProfileFormError('Não foi possível salvar. Verifique os dados ou sua senha atual.');
       toast.error('Verifique os dados informados ou sua senha atual.');
     },
   });
@@ -152,25 +192,57 @@ function CollectorProfilePage() {
       return res.data;
     },
     onSuccess: () => {
+      setWalletFormError(null);
       queryClient.invalidateQueries({ queryKey: ['wallets'] });
       toast.success('Carteira principal salva com sucesso!');
     },
     onError: () => {
+      setWalletFormError('Endereço da carteira inválido. Use um endereço hexadecimal 0x...');
       toast.error('Não foi possível salvar a carteira.');
     },
   });
 
   const handleSaveProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword && newPassword !== confirmNewPassword) {
-      toast.error('A confirmação da nova senha não coincide.');
+    setProfileFormError(null);
+
+    if (!displayName.trim() || !username.trim() || !email.trim()) {
+      setProfileFormError('Preencha Nome de exibição, Nome de usuário e E-mail.');
       return;
     }
+
+    if (newPassword || confirmNewPassword || currentPassword) {
+      if (!currentPassword) {
+        setProfileFormError('Informe sua senha atual para alterar a senha.');
+        return;
+      }
+      if (newPassword.length < 6) {
+        setProfileFormError('A nova senha deve ter pelo menos 6 caracteres.');
+        return;
+      }
+      if (newPassword !== confirmNewPassword) {
+        setProfileFormError('A confirmação da nova senha não coincide.');
+        return;
+      }
+    }
+
     saveProfileMutation.mutate();
   };
 
   const handleSaveWalletSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setWalletFormError(null);
+
+    if (!wDisplayName.trim() || !wNickname.trim() || !wAddress.trim()) {
+      setWalletFormError('Preencha Nome de exibição, Apelido e Endereço 0x da carteira.');
+      return;
+    }
+
+    if (!wAddress.trim().startsWith('0x') || wAddress.trim().length < 10) {
+      setWalletFormError('Informe um endereço de carteira válido iniciado por 0x.');
+      return;
+    }
+
     saveWalletMutation.mutate();
   };
 
@@ -193,27 +265,28 @@ function CollectorProfilePage() {
     toast.success('Carteira secundária adicionada!');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {}
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(AUTH_TOKEN_KEY);
     }
     queryClient.setQueryData(['auth', 'me'], null);
+    queryClient.removeQueries({ queryKey: ['profile'] });
+    queryClient.removeQueries({ queryKey: ['wallets'] });
+    queryClient.removeQueries({ queryKey: ['favorites'] });
     queryClient.invalidateQueries({ queryKey: ['cart'] });
-    queryClient.invalidateQueries({ queryKey: ['favorites'] });
     toast.info('Você saiu da sua conta.');
     navigate({ to: '/' });
   };
 
   return (
     <div className="min-h-screen w-full bg-[#140D0A] text-[#FAF5F0]">
-
       <div className="max-w-[1440px] mx-auto w-full px-5 sm:px-10 lg:px-[120px] pt-3.5 pb-16 flex flex-col">
-
         <Header />
 
-
         <div className="w-full mt-7 flex flex-col lg:flex-row items-start gap-8 lg:gap-10">
-
           <aside
             aria-label="Menu do perfil"
             className="w-full lg:w-[235px] shrink-0 bg-[#1D130E] rounded-[4px] overflow-hidden flex flex-col"
@@ -248,10 +321,11 @@ function CollectorProfilePage() {
                         search: { tab: item.id as 'dados' | 'carteiras' },
                       });
                     }}
-                    className={`relative w-full px-4 py-2.5 flex items-center gap-2.5 text-left text-[11px] transition-colors cursor-pointer ${isActive
-                      ? 'text-[#D1823C] font-semibold bg-[#261811]'
-                      : 'text-[#C2B2A6] hover:text-[#FAF5F0] hover:bg-[#24160F]/50'
-                      }`}
+                    className={`relative w-full px-4 py-2.5 flex items-center gap-2.5 text-left text-[11px] transition-colors cursor-pointer ${
+                      isActive
+                        ? 'text-[#D1823C] font-semibold bg-[#261811]'
+                        : 'text-[#C2B2A6] hover:text-[#FAF5F0] hover:bg-[#24160F]/50'
+                    }`}
                   >
                     {isActive && (
                       <span
@@ -266,7 +340,6 @@ function CollectorProfilePage() {
               })}
             </nav>
 
-
             <div className="border-t border-[#2E1E15] px-4 py-3">
               <button
                 type="button"
@@ -279,15 +352,21 @@ function CollectorProfilePage() {
             </div>
           </aside>
 
-
           <main className="flex-1 w-full max-w-[660px]">
             {activeTab === 'dados' ? (
-
               <form onSubmit={handleSaveProfileSubmit} className="flex flex-col">
                 <h2 className="text-[#FAF5F0] font-bold text-xs mb-5">
                   Perfil do colecionador
                 </h2>
 
+                {profileFormError && (
+                  <div
+                    role="alert"
+                    className="mb-4 rounded bg-red-500/15 border border-red-500/40 px-3 py-2 text-xs text-red-300"
+                  >
+                    {profileFormError}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
                   <div className="flex flex-col gap-1.5">
@@ -319,7 +398,6 @@ function CollectorProfilePage() {
                     />
                   </div>
                 </div>
-
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
                   <div className="flex flex-col gap-1.5">
@@ -360,7 +438,6 @@ function CollectorProfilePage() {
                     </div>
                   </div>
                 </div>
-
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-7 items-end">
                   <div className="flex flex-col gap-1.5">
@@ -419,11 +496,9 @@ function CollectorProfilePage() {
                   </div>
                 </div>
 
-
                 <h3 className="text-[#FAF5F0] font-bold text-xs mb-4">Alterar senha</h3>
 
                 <div className="w-full sm:w-[calc(50%-12px)] flex flex-col gap-4">
-
                   <div className="flex flex-col gap-1.5">
                     <label
                       htmlFor="profile-current-password"
@@ -456,7 +531,6 @@ function CollectorProfilePage() {
                     </div>
                   </div>
 
-
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor="profile-new-password" className="text-[#FAF5F0] text-[11px]">
                       Nova senha
@@ -483,7 +557,6 @@ function CollectorProfilePage() {
                       </button>
                     </div>
                   </div>
-
 
                   <div className="flex flex-col gap-1.5">
                     <label
@@ -519,7 +592,6 @@ function CollectorProfilePage() {
                     </div>
                   </div>
 
-
                   <div className="mt-2">
                     <button
                       type="submit"
@@ -532,9 +604,7 @@ function CollectorProfilePage() {
                 </div>
               </form>
             ) : (
-
               <form onSubmit={handleSaveWalletSubmit} className="flex flex-col">
-
                 <div className="flex items-start justify-between gap-4 mb-5">
                   <div>
                     <h2 className="text-[#FAF5F0] font-bold text-xs">Carteira principal</h2>
@@ -557,6 +627,14 @@ function CollectorProfilePage() {
                   </button>
                 </div>
 
+                {walletFormError && (
+                  <div
+                    role="alert"
+                    className="mb-4 rounded bg-red-500/15 border border-red-500/40 px-3 py-2 text-xs text-red-300"
+                  >
+                    {walletFormError}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
                   <div className="flex flex-col gap-1.5">
@@ -585,7 +663,6 @@ function CollectorProfilePage() {
                     />
                   </div>
                 </div>
-
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
                   <div className="flex flex-col gap-1.5">
@@ -621,7 +698,6 @@ function CollectorProfilePage() {
                   </div>
                 </div>
 
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4 items-end">
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor="wallet-address" className="text-[#FAF5F0] text-[11px]">
@@ -651,7 +727,6 @@ function CollectorProfilePage() {
                     />
                   </div>
                 </div>
-
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
                   <div className="flex flex-col gap-1.5">
@@ -684,7 +759,6 @@ function CollectorProfilePage() {
                     />
                   </div>
                 </div>
-
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-5">
                   <div className="flex flex-col gap-1.5">
@@ -726,7 +800,6 @@ function CollectorProfilePage() {
                   </div>
                 </div>
 
-
                 <div>
                   <button
                     type="submit"
@@ -736,7 +809,6 @@ function CollectorProfilePage() {
                     {saveWalletMutation.isPending ? 'Salvando...' : 'Salvar carteira'}
                   </button>
                 </div>
-
 
                 <div className="mt-7 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div>
@@ -796,4 +868,3 @@ function CollectorProfilePage() {
     </div>
   );
 }
-

@@ -108,7 +108,6 @@ class MockDatabase {
     }
     this.save();
   }
-
   
   public findUserByEmail(email: string): UserRecord | undefined {
     return this.state.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
@@ -154,7 +153,6 @@ class MockDatabase {
     this.save();
     return true;
   }
-
   
   public getNFTs(): NFT[] {
     return [...this.state.nfts];
@@ -176,7 +174,6 @@ class MockDatabase {
     this.save();
     return nft;
   }
-
   
   public getFavorites(userId: string): NFT[] {
     const ids = this.state.favorites[userId] || [];
@@ -208,7 +205,6 @@ class MockDatabase {
     this.save();
     return this.state.favorites[userId];
   }
-
   
   public getCart(userId?: string): CartItem[] {
     if (!userId) return [...this.state.guestCart];
@@ -304,7 +300,6 @@ class MockDatabase {
     this.save();
     return { mergedCart: userCart, removedUnavailable };
   }
-
   
   public calculateQuote(userId: string | undefined, couponCode?: string): { quote: Quotation; error?: string } {
     const cart = this.getCart(userId);
@@ -393,7 +388,6 @@ class MockDatabase {
     this.state.quotes = this.state.quotes || {};
     return this.state.quotes[quoteId];
   }
-
   
   public findIdempotentOrder(idempotencyKey: string): { orderId: string; payloadHash: string; order: Order } | undefined {
     return this.state.idempotencyStore[idempotencyKey];
@@ -514,7 +508,6 @@ class MockDatabase {
     this.save();
     return order;
   }
-
   
   public getWallets(userId: string): Wallet[] {
     return this.state.wallets[userId] || [];
