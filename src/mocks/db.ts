@@ -58,21 +58,29 @@ function getInitialState(): DatabaseState {
     favorites: {
       'user-alex': ['nft-1', 'nft-4'],
       'user-sam': ['nft-3', 'nft-8'],
+      'user-kurio': ['nft-1', 'nft-2'],
+      'user-elena': ['nft-2', 'nft-6'],
     },
     carts: {
       'user-alex': getInitialCartItems(),
       'user-sam': [],
+      'user-kurio': getInitialCartItems(),
+      'user-elena': [],
     },
     guestCart: getInitialCartItems(),
     quotes: {},
     orders: {
       'user-alex': [],
       'user-sam': [],
+      'user-kurio': [],
+      'user-elena': [],
     },
     idempotencyStore: {},
     wallets: {
       'user-alex': initialWalletsFixture.filter((w) => w.userId === 'user-alex'),
       'user-sam': initialWalletsFixture.filter((w) => w.userId === 'user-sam'),
+      'user-kurio': initialWalletsFixture.filter((w) => w.userId === 'user-kurio'),
+      'user-elena': initialWalletsFixture.filter((w) => w.userId === 'user-elena'),
     },
     coupons: JSON.parse(JSON.stringify(initialCouponsFixture)),
     catalogPreferences: {
@@ -94,7 +102,22 @@ class MockDatabase {
       try {
         const stored = window.localStorage.getItem(DB_STORAGE_KEY);
         if (stored) {
-          return JSON.parse(stored);
+          const parsed: DatabaseState = JSON.parse(stored);
+          for (const fixtureUser of initialUsersFixture) {
+            const exists = parsed.users.some(
+              (u) => u.email.toLowerCase() === fixtureUser.email.toLowerCase()
+            );
+            if (!exists) {
+              parsed.users.push({ ...fixtureUser });
+              parsed.favorites[fixtureUser.id] = parsed.favorites[fixtureUser.id] || [];
+              parsed.carts[fixtureUser.id] = parsed.carts[fixtureUser.id] || [];
+              parsed.orders[fixtureUser.id] = parsed.orders[fixtureUser.id] || [];
+              parsed.wallets[fixtureUser.id] =
+                parsed.wallets[fixtureUser.id] ||
+                initialWalletsFixture.filter((w) => w.userId === fixtureUser.id);
+            }
+          }
+          return parsed;
         }
       } catch {
         
@@ -371,10 +394,10 @@ class MockDatabase {
     if (couponCode) {
       const coupon = this.state.coupons.find((c) => c.code.toUpperCase() === couponCode.trim().toUpperCase());
       if (!coupon) {
-        return { quote: {} as Quotation, error: 'CUPOM_INVALIDO' };
+        return { quote: {} as Quotation, error: 'INVALID_COUPON' };
       }
       if (new Date(coupon.expiresAt) < new Date()) {
-        return { quote: {} as Quotation, error: 'CUPOM_EXPIRADO' };
+        return { quote: {} as Quotation, error: 'EXPIRED_COUPON' };
       }
 
       if (coupon.type === 'percent') {

@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { apiClient, AUTH_TOKEN_KEY, isAuthenticated, triggerRequireAuth } from '../api/client';
 import {
   catalogQuerySchema,
+  type CartResponse,
   type CatalogQueryParams,
   type FavoritesResponse,
   type NFT,
@@ -312,6 +313,17 @@ function HomeDiscoveryPage() {
     retry: false,
   });
 
+  const { data: cartData } = useQuery<CartResponse>({
+    queryKey: ['cart'],
+    queryFn: async () => {
+      const res = await apiClient.get<CartResponse>('/cart');
+      return res.data;
+    },
+    enabled: Boolean(sessionData?.user),
+  });
+
+  const mobileCartCount = sessionData?.user ? (cartData?.itemCount ?? 0) : 0;
+
   const { data: favoritesData } = useQuery<FavoritesResponse>({
     queryKey: ['favorites'],
     queryFn: async ({ signal }) => {
@@ -506,7 +518,7 @@ function HomeDiscoveryPage() {
   };
 
   const handleExploreFeaturedNft = (nftId: string) => {
-    navigate({ to: '/mercado', search: { id: nftId } });
+    navigate({ to: '/market', search: { id: nftId } });
   };
 
   const handleExploreNewLaunches = async () => {
@@ -849,11 +861,11 @@ function HomeDiscoveryPage() {
                       <div
                         role="button"
                         tabIndex={0}
-                        onClick={() => navigate({ to: '/mercado', search: { id: favNft.id } })}
+                        onClick={() => navigate({ to: '/market', search: { id: favNft.id } })}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            navigate({ to: '/mercado', search: { id: favNft.id } });
+                            navigate({ to: '/market', search: { id: favNft.id } });
                           }
                         }}
                         className="w-full aspect-[150/174] rounded-[12px] overflow-hidden cursor-pointer"
@@ -929,11 +941,11 @@ function HomeDiscoveryPage() {
                       <div
                         role="button"
                         tabIndex={0}
-                        onClick={() => navigate({ to: '/mercado', search: { id: nft.id } })}
+                        onClick={() => navigate({ to: '/market', search: { id: nft.id } })}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            navigate({ to: '/mercado', search: { id: nft.id } });
+                            navigate({ to: '/market', search: { id: nft.id } });
                           }
                         }}
                         className="w-full aspect-[150/174] rounded-[12px] overflow-hidden cursor-pointer"
@@ -1000,11 +1012,11 @@ function HomeDiscoveryPage() {
                       <div
                         role="button"
                         tabIndex={0}
-                        onClick={() => navigate({ to: '/mercado', search: { id: nft.id } })}
+                        onClick={() => navigate({ to: '/market', search: { id: nft.id } })}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            navigate({ to: '/mercado', search: { id: nft.id } });
+                            navigate({ to: '/market', search: { id: nft.id } });
                           }
                         }}
                         className="w-full aspect-[150/174] rounded-[12px] overflow-hidden cursor-pointer"
@@ -1078,7 +1090,7 @@ function HomeDiscoveryPage() {
             <button
               type="button"
               aria-label="Explorar NFT em destaque"
-              onClick={() => navigate({ to: '/mercado', search: { id: 'nft-1' } })}
+              onClick={() => navigate({ to: '/market', search: { id: 'nft-1' } })}
               className="w-14 h-14 rounded-full bg-[#D1823C]/85 backdrop-blur-md border border-[#E5A467]/40 shadow-[0_6px_22px_rgba(209,130,60,0.5)] flex items-center justify-center text-[#FAF5F0] cursor-pointer"
             >
               <Scan className="w-6 h-6" />
@@ -1088,11 +1100,21 @@ function HomeDiscoveryPage() {
           <div className="flex items-center gap-10">
             {sessionData?.user ? (
               <Link
-                to="/carrinho"
-                aria-label="Carrinho"
-                className="text-[#C8A992] hover:text-[#D1823C] p-1.5 transition-colors"
+                to="/cart"
+                aria-label={`Carrinho de compras com ${mobileCartCount} ${
+                  mobileCartCount === 1 ? 'item' : 'itens'
+                }`}
+                className="relative text-[#C8A992] hover:text-[#D1823C] p-1.5 transition-colors"
               >
                 <ShoppingCart className="w-5 h-5" />
+                {mobileCartCount > 0 && (
+                  <span
+                    data-testid="mobile-cart-badge-count"
+                    className="absolute -top-1 -right-1.5 min-w-[17px] h-[17px] px-1 rounded-full bg-[#D1823C] text-[#140D0A] text-[10px] font-extrabold flex items-center justify-center leading-none"
+                  >
+                    {mobileCartCount}
+                  </span>
+                )}
               </Link>
             ) : (
               <div className="relative group">
@@ -1121,7 +1143,7 @@ function HomeDiscoveryPage() {
               aria-label="Perfil"
               onClick={() => {
                 if (sessionData?.user) {
-                  navigate({ to: '/perfil' });
+                  navigate({ to: '/profile' });
                 } else {
                   setIsMobileAuthOpen(true);
                 }
@@ -1347,7 +1369,7 @@ function HomeDiscoveryPage() {
                     type="button"
                     onClick={() =>
                       navigate({
-                        to: '/mercado',
+                        to: '/market',
                         search: { id: 'nft-2' },
                       })
                     }
@@ -1570,66 +1592,106 @@ function HomeDiscoveryPage() {
 
                 {!isLoading && !isError && catalogData && catalogData.items.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-5 lg:gap-x-6 gap-y-4 lg:gap-y-5">
-                    {catalogData.items.map((nft: NFT) => (
-                      <article
-                        key={nft.id}
-                        data-testid={`nft-card-${nft.id}`}
-                        className="flex flex-col group"
-                      >
-                        <div className="relative transition-transform duration-200 group-hover:-translate-y-1">
-                          <div
-                            onClick={() =>
-                              navigate({
-                                to: '/mercado',
-                                search: { id: nft.id },
-                              })
-                            }
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                navigate({
-                                  to: '/mercado',
-                                  search: { id: nft.id },
-                                });
+                    {catalogData.items.map((nft: NFT) => {
+                      const isDesktopFav = Boolean(favoritesData?.nftIds?.includes(nft.id));
+                      return (
+                        <article
+                          key={nft.id}
+                          data-testid={`nft-card-${nft.id}`}
+                          className="flex flex-col group"
+                        >
+                          <div className="relative transition-transform duration-200 group-hover:-translate-y-1">
+                            <button
+                              type="button"
+                              aria-label={
+                                isDesktopFav
+                                  ? `Remover ${nft.name} dos favoritos`
+                                  : `Favoritar ${nft.name}`
                               }
-                            }}
-                            aria-label={`Ver detalhes de ${nft.name}, preço ${nft.priceEth} ETH`}
-                            className="w-full aspect-square max-h-[200px] overflow-hidden relative cursor-pointer bg-[#24160F] rounded-[14px]"
-                          >
-                            <img
-                              src={nft.imageUrl}
-                              alt={`${nft.name} da coleção ${nft.collection}`}
-                              width={193}
-                              height={223}
-                              loading="lazy"
-                              className="w-full h-full object-cover rounded-[14px]"
-                            />
-                          </div>
-                        </div>
+                              aria-pressed={isDesktopFav}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isAuthenticated()) {
+                                  triggerRequireAuth({
+                                    message: 'Faça login para salvar seus NFTs favoritos.',
+                                    onSuccess: () =>
+                                      favoriteMutation.mutate({
+                                        nftId: nft.id,
+                                        isFav: Boolean(favoritesData?.nftIds?.includes(nft.id)),
+                                      }),
+                                  });
+                                  return;
+                                }
+                                favoriteMutation.mutate({
+                                  nftId: nft.id,
+                                  isFav: Boolean(favoritesData?.nftIds?.includes(nft.id)),
+                                });
+                              }}
+                              className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-[#24160F]/90 hover:bg-[#140D0A] border border-[#4A3222] hover:border-[#D1823C] flex items-center justify-center text-[#D1823C] transition-all cursor-pointer"
+                            >
+                              <Heart
+                                className={`w-3.5 h-3.5 ${
+                                  isDesktopFav
+                                    ? 'fill-[#D1823C] text-[#D1823C]'
+                                    : 'text-[#D1823C]'
+                                }`}
+                              />
+                            </button>
 
-                        {nft.id !== 'nft-8' ? (
-                          <>
-                            <h3 className="text-[#FAF5F0] text-xs sm:text-[13px] font-medium mt-2.5 truncate">
-                              {nft.name}
-                            </h3>
-                            <div className="flex items-center gap-2.5 mt-1 text-xs sm:text-[13px]">
-                              <span className="text-[#D1823C] font-extrabold">
-                                {nft.priceEth} ETH
-                              </span>
-                              {nft.originalPriceEth && (
-                                <span className="text-[#9E8C7E] line-through font-normal">
-                                  {nft.originalPriceEth} ETH
-                                </span>
-                              )}
+                            <div
+                              onClick={() =>
+                                navigate({
+                                  to: '/market',
+                                  search: { id: nft.id },
+                                })
+                              }
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  navigate({
+                                    to: '/market',
+                                    search: { id: nft.id },
+                                  });
+                                }
+                              }}
+                              aria-label={`Ver detalhes de ${nft.name}, preço ${nft.priceEth} ETH`}
+                              className="w-full aspect-square max-h-[200px] overflow-hidden relative cursor-pointer bg-[#24160F] rounded-[14px]"
+                            >
+                              <img
+                                src={nft.imageUrl}
+                                alt={`${nft.name} da coleção ${nft.collection}`}
+                                width={193}
+                                height={223}
+                                loading="lazy"
+                                className="w-full h-full object-cover rounded-[14px]"
+                              />
                             </div>
-                          </>
-                        ) : (
-                          <div aria-hidden="true" className="h-[44px] mt-2.5" />
-                        )}
-                      </article>
-                    ))}
+                          </div>
+
+                          {nft.id !== 'nft-8' ? (
+                            <>
+                              <h3 className="text-[#FAF5F0] text-xs sm:text-[13px] font-medium mt-2.5 truncate">
+                                {nft.name}
+                              </h3>
+                              <div className="flex items-center gap-2.5 mt-1 text-xs sm:text-[13px]">
+                                <span className="text-[#D1823C] font-extrabold">
+                                  {nft.priceEth} ETH
+                                </span>
+                                {nft.originalPriceEth && (
+                                  <span className="text-[#9E8C7E] line-through font-normal">
+                                    {nft.originalPriceEth} ETH
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          ) : (
+                            <div aria-hidden="true" className="h-[44px] mt-2.5" />
+                          )}
+                        </article>
+                      );
+                    })}
                   </div>
                 )}
 

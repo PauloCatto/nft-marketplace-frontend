@@ -25,7 +25,7 @@ test.describe('KURIO NFT Marketplace - Fluxos E2E e Cenarios Deterministicos', (
       await expect(page).toHaveURL(/tab=new/)
     }
 
-    await page.goto('/mercado?nftId=nft-1')
+    await page.goto('/market?nftId=nft-1')
     await expect(page.getByText('Emerald Ape #042').first()).toBeVisible()
     await expect(page.getByText('1.19 ETH').first()).toBeVisible()
   })
@@ -33,7 +33,7 @@ test.describe('KURIO NFT Marketplace - Fluxos E2E e Cenarios Deterministicos', (
   test('Carrinho de NFTs, aplicacao de cupom valido e tratamento de cupom invalido', async ({
     page,
   }) => {
-    await page.goto('/carrinho')
+    await page.goto('/cart')
     await expect(page.getByText('Emerald Ape #042').first()).toBeVisible()
     await expect(page.getByText('8.92 ETH').first()).toBeVisible()
 
@@ -54,7 +54,7 @@ test.describe('KURIO NFT Marketplace - Fluxos E2E e Cenarios Deterministicos', (
     isMobile,
   }) => {
     if (isMobile) {
-      await page.goto('/perfil')
+      await page.goto('/profile')
       await page.getByRole('button', { name: 'Entrar agora' }).click()
     } else {
       await page.getByRole('button', { name: 'Entrar' }).first().click()
@@ -65,7 +65,7 @@ test.describe('KURIO NFT Marketplace - Fluxos E2E e Cenarios Deterministicos', (
       timeout: 5000,
     }).catch(() => {})
 
-    await page.goto('/perfil')
+    await page.goto('/profile')
     await expect(page.getByText('Perfil do colecionador').first()).toBeVisible()
 
     const displayNameInput = page.locator('input[placeholder="Kurio Collector"]')
@@ -87,7 +87,7 @@ test.describe('KURIO NFT Marketplace - Fluxos E2E e Cenarios Deterministicos', (
       await page.getByRole('button', { name: 'Entrar' }).last().click()
     }
 
-    await page.goto('/pagamento')
+    await page.goto('/checkout')
     await expect(page.getByText('8.936 ETH').first()).toBeVisible()
 
     await page.evaluate(() => {
@@ -118,7 +118,7 @@ test.describe('KURIO NFT Marketplace - Fluxos E2E e Cenarios Deterministicos', (
   })
 
   test('Atualizacao de preco em tempo real via Socket.IO durante o checkout', async ({ page }) => {
-    await page.goto('/pagamento')
+    await page.goto('/checkout')
     await expect(page.getByText('8.936 ETH').first()).toBeVisible()
 
     await page.evaluate(() => {
@@ -141,11 +141,11 @@ test.describe('KURIO NFT Marketplace - Fluxos E2E e Cenarios Deterministicos', (
     await expect(page.getByText('Emerald Ape #042').first()).toBeVisible()
     await expect(page).toHaveScreenshot(`${prefix}-home.png`, { maxDiffPixelRatio: 0.05 })
 
-    await page.goto('/mercado?nftId=nft-1')
+    await page.goto('/market?nftId=nft-1')
     await expect(page.getByText('Emerald Ape #042').first()).toBeVisible()
     await expect(page).toHaveScreenshot(`${prefix}-nft-detail.png`, { maxDiffPixelRatio: 0.05 })
 
-    await page.goto('/carrinho')
+    await page.goto('/cart')
     await expect(page.getByText('8.92 ETH').first()).toBeVisible()
     await expect(page).toHaveScreenshot(`${prefix}-cart.png`, { maxDiffPixelRatio: 0.05 })
   })
