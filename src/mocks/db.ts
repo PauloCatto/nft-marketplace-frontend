@@ -5,7 +5,7 @@ import { initialNFTsFixture } from './fixtures/nfts.fixture';
 import { initialCouponsFixture, type Coupon } from './fixtures/coupons.fixture';
 import { initialWalletsFixture } from './fixtures/wallets.fixture';
 
-const DB_STORAGE_KEY = 'jungle_nft_mock_db_v1';
+const DB_STORAGE_KEY = 'kurio_nft_mock_db_v11';
 
 export interface DatabaseState {
   users: UserRecord[];
@@ -20,6 +20,29 @@ export interface DatabaseState {
   coupons: Coupon[];
 }
 
+function getInitialCartItems(): CartItem[] {
+  return [
+    {
+      nftId: 'nft-1',
+      nft: JSON.parse(JSON.stringify(initialNFTsFixture.find((n) => n.id === 'nft-1')!)),
+      quantity: 2,
+      priceAtAddition: '1.19',
+    },
+    {
+      nftId: 'nft-5',
+      nft: JSON.parse(JSON.stringify(initialNFTsFixture.find((n) => n.id === 'nft-5')!)),
+      quantity: 6,
+      priceAtAddition: '1.39',
+    },
+    {
+      nftId: 'nft-6',
+      nft: JSON.parse(JSON.stringify(initialNFTsFixture.find((n) => n.id === 'nft-6')!)),
+      quantity: 9,
+      priceAtAddition: '1.79',
+    },
+  ];
+}
+
 function getInitialState(): DatabaseState {
   return {
     users: JSON.parse(JSON.stringify(initialUsersFixture)),
@@ -29,17 +52,10 @@ function getInitialState(): DatabaseState {
       'user-sam': ['nft-3', 'nft-8'],
     },
     carts: {
-      'user-alex': [
-        {
-          nftId: 'nft-2',
-          nft: initialNFTsFixture.find((n) => n.id === 'nft-2')!,
-          quantity: 1,
-          priceAtAddition: '0.125',
-        },
-      ],
+      'user-alex': getInitialCartItems(),
       'user-sam': [],
     },
-    guestCart: [],
+    guestCart: getInitialCartItems(),
     quotes: {},
     orders: {
       'user-alex': [],
@@ -359,7 +375,7 @@ class MockDatabase {
       }
     }
 
-    const gasFee = new Decimal('0.0035');
+    const gasFee = new Decimal('0.016');
     const total = subtotal.minus(discount).plus(gasFee);
     const ethPriceInUsd = new Decimal('3000');
     const totalUsd = total.times(ethPriceInUsd).toFixed(2);

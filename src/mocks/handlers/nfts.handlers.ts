@@ -3,6 +3,19 @@ import Decimal from 'decimal.js';
 import { db } from '../db';
 import { scenarios } from '../scenarios';
 
+const CATEGORY_ALIASES: Record<string, string[]> = {
+  'arte digital': ['arte digital', 'art'],
+  art: ['arte digital', 'art'],
+  fotografia: ['fotografia', 'photography'],
+  photography: ['fotografia', 'photography'],
+  jogos: ['jogos', 'gaming'],
+  gaming: ['jogos', 'gaming'],
+  'colecionáveis': ['colecionáveis', 'collectibles'],
+  collectibles: ['colecionáveis', 'collectibles'],
+  generativa: ['generativa', 'generativo'],
+  generativo: ['generativa', 'generativo'],
+};
+
 export const nftHandlers = [
   // GET */api/nfts
   http.get('*/api/nfts', async ({ request }) => {
@@ -21,21 +34,30 @@ export const nftHandlers = [
         items: [],
         total: 0,
         page: 1,
-        limit: 8,
+        limit: 9,
         totalPages: 0,
       });
     }
 
     const url = new URL(request.url);
-    const search = url.searchParams.get('search')?.toLowerCase() || '';
+    const search = url.searchParams.get('search')?.toLowerCase().trim() || '';
     const category = url.searchParams.get('category') || 'All';
+    const network = url.searchParams.get('network') || 'All';
+    const tab = url.searchParams.get('tab') || 'all';
     const minPrice = url.searchParams.get('minPrice');
     const maxPrice = url.searchParams.get('maxPrice');
     const sort = url.searchParams.get('sort') || 'newest';
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
-    const limit = Math.max(1, parseInt(url.searchParams.get('limit') || '8', 10));
+    const limit = Math.max(1, parseInt(url.searchParams.get('limit') || '9', 10));
 
     let nfts = db.getNFTs();
+
+    // Filtro por aba (Todos os NFTs | Novos lançamentos | Em alta)
+    if (tab === 'new') {
+      nfts = nfts.filter((nft) => Boolean(nft.isNewLaunch));
+    } else if (tab === 'trending') {
+      nfts = nfts.filter((nft) => Boolean(nft.isTrending));
+    }
 
     // Filtro por busca (nome, coleção ou criador)
     if (search) {
@@ -47,15 +69,22 @@ export const nftHandlers = [
       );
     }
 
-    // Filtro por categoria
+    // Filtro por categoria / coleção
     if (category && category !== 'All') {
-      nfts = nfts.filter((nft) => nft.category.toLowerCase() === category.toLowerCase());
+      const catLower = category.toLowerCase();
+      const allowed = CATEGORY_ALIASES[catLower] || [catLower];
+      nfts = nfts.filter((nft) => allowed.includes(nft.category.toLowerCase()));
+    }
+
+    // Filtro por rede (Ethereum, Polygon, Solana)
+    if (network && network !== 'All') {
+      nfts = nfts.filter((nft) => (nft.network || 'Ethereum').toLowerCase() === network.toLowerCase());
     }
 
     // Filtro por faixa de preço
     if (minPrice) {
       try {
-        const minD = new Decimal(minPrice);
+        const minD = new Decimal(minPrice.replace(',', '.'));
         nfts = nfts.filter((nft) => new Decimal(nft.priceEth).greaterThanOrEqualTo(minD));
       } catch {
         // Ignora filtro inválido
@@ -63,7 +92,7 @@ export const nftHandlers = [
     }
     if (maxPrice) {
       try {
-        const maxD = new Decimal(maxPrice);
+        const maxD = new Decimal(maxPrice.replace(',', '.'));
         nfts = nfts.filter((nft) => new Decimal(nft.priceEth).lessThanOrEqualTo(maxD));
       } catch {
         // Ignora filtro inválido
@@ -81,8 +110,10 @@ export const nftHandlers = [
       if (sort === 'popular') {
         return b.likesCount - a.likesCount;
       }
-      // 'newest' default
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      // 'newest' default: preserva a ordem exata da vitrine (nft-1 até nft-9 na página 1)
+      const numA = parseInt(a.id.replace('nft-', ''), 10) || 999;
+      const numB = parseInt(b.id.replace('nft-', ''), 10) || 999;
+      return numA - numB;
     });
 
     const total = nfts.length;
