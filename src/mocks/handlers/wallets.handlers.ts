@@ -27,7 +27,6 @@ export const walletHandlers = [
 
     return HttpResponse.json({ items: wallets });
   }),
-
   
   http.post('*/api/wallets', async ({ request }) => {
     const scenario = scenarios.get();
@@ -48,7 +47,6 @@ export const walletHandlers = [
     const newWallet = db.addWallet(userId, body);
     return HttpResponse.json(newWallet, { status: 201 });
   }),
-
   
   http.patch('*/api/wallets/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
@@ -70,7 +68,6 @@ export const walletHandlers = [
 
     return HttpResponse.json(updated);
   }),
-
   
   http.delete('*/api/wallets/:id', async ({ request, params }) => {
     const scenario = scenarios.get();

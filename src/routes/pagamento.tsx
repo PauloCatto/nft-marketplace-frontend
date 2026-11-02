@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { X, ChevronLeft, MoreVertical, Wallet } from 'lucide-react';
+import { io } from 'socket.io-client';
+import { X, ChevronLeft, MoreVertical, Wallet as WalletIcon, AlertTriangle } from 'lucide-react';
 import Decimal from 'decimal.js';
 import { toast } from 'sonner';
-import { apiClient } from '../api/client';
+import { apiClient, AUTH_TOKEN_KEY } from '../api/client';
 import type {
   CartItem,
   CartResponse,
+  NftUpdatedEvent,
   Order,
+  OrderUpdatedEvent,
   Quotation,
+  User as UserType,
+  Wallet,
 } from '../api/contracts';
+import { JUNGLE_WS_URL } from '../mocks/socket/socketHandler';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 
@@ -47,15 +53,17 @@ function CheckoutPaymentPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const queryClient = useQueryClient();
 
-  const [displayName, setDisplayName] = useState('');
-  const [username, setUsername] = useState('');
-  const [network, setNetwork] = useState<'Ethereum' | 'Polygon' | 'Solana' | ''>('');
-  const [profileName, setProfileName] = useState('');
-  const [walletAddress, setWalletAddress] = useState('');
+  const [displayName, setDisplayName] = useState('Nova Sato');
+  const [username, setUsername] = useState('nova.kurio');
+  const [network, setNetwork] = useState<'Ethereum' | 'Polygon' | 'Solana' | ''>('Ethereum');
+  const [profileName, setProfileName] = useState('Kurio Collector');
+  const [walletAddress, setWalletAddress] = useState(
+    '0x71C498b8A90123456789ABCDEF0123456789498b'
+  );
   const [secondaryWallet, setSecondaryWallet] = useState('');
-  const [walletType, setWalletType] = useState('');
-  const [referralCode, setReferralCode] = useState('');
-  const [email, setEmail] = useState('');
+  const [walletType, setWalletType] = useState('Coinbase Wallet');
+  const [referralCode, setReferralCode] = useState('KURIO2026');
+  const [email, setEmail] = useState('contato@email.com');
   const [ensDomain, setEnsDomain] = useState('.eth');
   const [useAnotherWallet, setUseAnotherWallet] = useState(false);
   const [collectorNote, setCollectorNote] = useState('');
@@ -78,6 +86,49 @@ function CheckoutPaymentPage() {
     () => `idem-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
   );
   const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
+  const [rejectedMessage, setRejectedMessage] = useState<string | null>(null);
+  const [quoteStaleNotice, setQuoteStaleNotice] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const hasToken =
+    typeof window !== 'undefined' && Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY));
+
+  const { data: profileData } = useQuery<UserType>({
+    queryKey: ['profile'],
+    queryFn: async ({ signal }) => {
+      const res = await apiClient.get<UserType>('/profile', { signal });
+      return res.data;
+    },
+    enabled: hasToken,
+    retry: false,
+  });
+
+  const { data: walletsData } = useQuery<{ items: Wallet[] }>({
+    queryKey: ['wallets'],
+    queryFn: async ({ signal }) => {
+      const res = await apiClient.get<{ items: Wallet[] }>('/wallets', { signal });
+      return res.data;
+    },
+    enabled: hasToken,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (profileData) {
+      setDisplayName(profileData.name);
+      setEmail(profileData.email);
+    }
+  }, [profileData]);
+
+  useEffect(() => {
+    if (walletsData?.items && walletsData.items.length > 0) {
+      const primary = walletsData.items.find((w) => w.isPrimary) || walletsData.items[0];
+      if (primary) {
+        setWalletAddress(primary.address);
+        setNetwork(primary.network);
+      }
+    }
+  }, [walletsData]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -101,6 +152,42 @@ function CheckoutPaymentPage() {
     },
     enabled: Boolean(cartData),
   });
+
+  useEffect(() => {
+    const socket = io(JUNGLE_WS_URL, {
+      transports: ['websocket'],
+      autoConnect: true,
+    });
+
+    socket.on('nft.updated', (event: NftUpdatedEvent) => {
+      const isInCart = cartData?.items?.some((i) => i.nftId === event.nftId);
+      if (isInCart) {
+        queryClient.invalidateQueries({ queryKey: ['cart'] });
+        refetchQuote();
+        setQuoteStaleNotice(
+          `O preço ou disponibilidade de um item (${event.nftId}) foi atualizado em tempo real para ${event.priceEth} ETH. Revise o novo total antes de confirmar.`
+        );
+        toast.warning('Cotação atualizada em tempo real. Confirme os novos valores.');
+      }
+    });
+
+    socket.on('order.updated', (event: OrderUpdatedEvent) => {
+      if (event.status === 'CONFIRMED') {
+        toast.success(`Pedido #${event.orderId} confirmado na rede!`);
+      } else if (event.status === 'REJECTED') {
+        setRejectedMessage('A transação foi recusada pela carteira simulada.');
+      }
+    });
+
+    socket.on('connect', () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      refetchQuote();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [cartData?.items, queryClient, refetchQuote]);
 
   const applyCouponMutation = useMutation({
     mutationFn: async (code: string) => {
@@ -150,18 +237,52 @@ function CheckoutPaymentPage() {
       return res.data;
     },
     onSuccess: (order) => {
-      setConfirmedOrder(order);
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      queryClient.invalidateQueries({ queryKey: ['nfts'] });
+      setQuoteStaleNotice(null);
+      setFormError(null);
       if (order.status === 'CONFIRMED') {
+        setRejectedMessage(null);
+        setConfirmedOrder(order);
+        queryClient.invalidateQueries({ queryKey: ['cart'] });
+        queryClient.invalidateQueries({ queryKey: ['nfts'] });
         toast.success(`Compra confirmada na blockchain! Pedido #${order.id}`);
       } else {
+        setConfirmedOrder(null);
+        setRejectedMessage(
+          order.failureReason ||
+            'Pagamento recusado pela carteira simulada. Seus itens foram preservados no carrinho.'
+        );
         toast.error(order.failureReason || 'Transação rejeitada pela carteira.');
       }
     },
-    onError: () => {
+    onError: (err: unknown) => {
+      const apiErr = err as {
+        response?: { status?: number; data?: { error?: { code?: string; message?: string } } };
+      };
+      const status = apiErr?.response?.status;
+      const errMessage = apiErr?.response?.data?.error?.message;
+
+      if (status === 409) {
+        setQuoteStaleNotice(
+          errMessage ||
+            'O preço ou a disponibilidade mudou durante a compra. A cotação foi atualizada; revise e confirme novamente.'
+        );
+        queryClient.invalidateQueries({ queryKey: ['cart'] });
+        refetchQuote();
+        toast.warning('Cotação desatualizada. Revise o resumo atualizado e confirme novamente.');
+        return;
+      }
+
+      if (status === 504) {
+        setFormError(
+          'Tempo limite excedido (Timeout). Clique em Confirmar compra novamente para recuperar seu pedido com segurança (Idempotência ativa).'
+        );
+        toast.error('Timeout de rede. Reenvie para recuperar o mesmo pedido sem duplicidade.');
+        return;
+      }
+
       toast.error(
-        'Não foi possível concluir a transação no momento. Você pode tentar novamente com segurança (Idempotência ativa).'
+        errMessage ||
+          'Não foi possível concluir a transação no momento. Você pode tentar novamente com segurança.'
       );
     },
   });
@@ -169,6 +290,17 @@ function CheckoutPaymentPage() {
   const handleConfirmPurchase = (e: React.FormEvent) => {
     e.preventDefault();
     if (createOrderMutation.isPending) return;
+    setFormError(null);
+    setRejectedMessage(null);
+
+    if (!displayName.trim() || !email.trim() || !walletAddress.trim()) {
+      setFormError(
+        'Preencha Nome de exibição, E-mail e Endereço 0x da carteira antes de confirmar.'
+      );
+      toast.error('Verifique os campos obrigatórios do perfil do colecionador.');
+      return;
+    }
+
     createOrderMutation.mutate();
   };
 
@@ -238,8 +370,9 @@ function CheckoutPaymentPage() {
               className="bg-[#22150E] rounded-[16px] px-4 py-3.5 flex items-center justify-between gap-3.5 cursor-pointer"
             >
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileWallet === 'reserva' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
-                  }`}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                  selectedMobileWallet === 'reserva' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
+                }`}
               >
                 {selectedMobileWallet === 'reserva' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -269,8 +402,9 @@ function CheckoutPaymentPage() {
               className="bg-[#22150E] rounded-[16px] px-4 py-3.5 flex items-center justify-between gap-3.5 cursor-pointer"
             >
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileWallet === 'principal' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
-                  }`}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                  selectedMobileWallet === 'principal' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
+                }`}
               >
                 {selectedMobileWallet === 'principal' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -304,10 +438,11 @@ function CheckoutPaymentPage() {
                 <span className="text-[#FAF5F0] text-[12.5px]">WalletConnect</span>
               </div>
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileProvider === 'walletconnect'
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                  selectedMobileProvider === 'walletconnect'
                     ? 'border-[#D1823C]'
                     : 'border-[#5A3B28]'
-                  }`}
+                }`}
               >
                 {selectedMobileProvider === 'walletconnect' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -329,8 +464,9 @@ function CheckoutPaymentPage() {
                 <span className="text-[#FAF5F0] text-[12.5px]">MetaMask</span>
               </div>
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileProvider === 'metamask' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
-                  }`}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                  selectedMobileProvider === 'metamask' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
+                }`}
               >
                 {selectedMobileProvider === 'metamask' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -347,13 +483,14 @@ function CheckoutPaymentPage() {
             >
               <div className="flex items-center gap-3.5">
                 <span className="w-9 h-9 rounded-full bg-[#2B1B12] border border-[#3E271B] flex items-center justify-center text-[#D1823C] shrink-0">
-                  <Wallet className="w-4 h-4 text-[#D1823C]" />
+                  <WalletIcon className="w-4 h-4 text-[#D1823C]" />
                 </span>
                 <span className="text-[#FAF5F0] text-[12.5px]">Coinbase Wallet</span>
               </div>
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileProvider === 'coinbase' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
-                  }`}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                  selectedMobileProvider === 'coinbase' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
+                }`}
               >
                 {selectedMobileProvider === 'coinbase' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -401,6 +538,34 @@ function CheckoutPaymentPage() {
           </span>
           <span className="text-[#A8968A]">Pagamento</span>
         </nav>
+
+        {quoteStaleNotice && (
+          <div
+            role="alert"
+            className="mb-5 bg-[#D1823C]/15 border border-[#D1823C] rounded-lg px-4 py-3 flex items-center gap-3 text-xs text-[#FAF5F0]"
+          >
+            <AlertTriangle className="w-4 h-4 text-[#D1823C] shrink-0" />
+            <span>{quoteStaleNotice}</span>
+          </div>
+        )}
+
+        {rejectedMessage && (
+          <div
+            role="alert"
+            className="mb-5 bg-red-500/15 border border-red-500/40 rounded-lg px-4 py-3 text-xs text-red-300"
+          >
+            {rejectedMessage}
+          </div>
+        )}
+
+        {formError && (
+          <div
+            role="alert"
+            className="mb-5 bg-red-500/15 border border-red-500/40 rounded-lg px-4 py-3 text-xs text-red-300"
+          >
+            {formError}
+          </div>
+        )}
 
         <form
           onSubmit={handleConfirmPurchase}
@@ -737,10 +902,11 @@ function CheckoutPaymentPage() {
                   role="radio"
                   aria-checked={selectedPaymentMethod === 'multi'}
                   onClick={() => setSelectedPaymentMethod('multi')}
-                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 transition-colors cursor-pointer ${selectedPaymentMethod === 'multi'
+                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 transition-colors cursor-pointer ${
+                    selectedPaymentMethod === 'multi'
                       ? 'border-[#D1823C] bg-[#1F1510]'
                       : 'border-[#2C1E16] bg-[#140D0A] hover:border-[#4E3524]'
-                    }`}
+                  }`}
                 >
                   <span className="w-3.5 h-3.5 rounded-full border border-[#8C7A6B] flex items-center justify-center shrink-0">
                     {selectedPaymentMethod === 'multi' && (
@@ -761,10 +927,11 @@ function CheckoutPaymentPage() {
                   role="radio"
                   aria-checked={selectedPaymentMethod === 'metamask'}
                   onClick={() => setSelectedPaymentMethod('metamask')}
-                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 text-xs transition-colors cursor-pointer ${selectedPaymentMethod === 'metamask'
+                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 text-xs transition-colors cursor-pointer ${
+                    selectedPaymentMethod === 'metamask'
                       ? 'border-[#D1823C] bg-[#1F1510] text-[#FAF5F0] font-bold'
                       : 'border-[#2C1E16] bg-[#140D0A] text-[#C2B2A6] hover:border-[#4E3524]'
-                    }`}
+                  }`}
                 >
                   <span className="w-3.5 h-3.5 rounded-full border border-[#8C7A6B] flex items-center justify-center shrink-0">
                     {selectedPaymentMethod === 'metamask' && (
@@ -779,16 +946,18 @@ function CheckoutPaymentPage() {
                   role="radio"
                   aria-checked={selectedPaymentMethod === 'coinbase'}
                   onClick={() => setSelectedPaymentMethod('coinbase')}
-                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 text-xs transition-colors cursor-pointer ${selectedPaymentMethod === 'coinbase'
+                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 text-xs transition-colors cursor-pointer ${
+                    selectedPaymentMethod === 'coinbase'
                       ? 'border-[#D1823C] bg-[#1F1510] text-[#FAF5F0] font-bold'
                       : 'border-[#2C1E16] bg-[#140D0A] text-[#C2B2A6] hover:border-[#4E3524]'
-                    }`}
+                  }`}
                 >
                   <span
-                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${selectedPaymentMethod === 'coinbase'
+                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                      selectedPaymentMethod === 'coinbase'
                         ? 'border-[#D1823C]'
                         : 'border-[#8C7A6B]'
-                      }`}
+                    }`}
                   >
                     {selectedPaymentMethod === 'coinbase' && (
                       <span className="w-2 h-2 rounded-full bg-[#D1823C]" />

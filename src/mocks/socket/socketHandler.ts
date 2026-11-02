@@ -8,7 +8,6 @@ export const JUNGLE_WS_URL = 'wss://api.jungle.io';
 
 export const jungleWs = ws.link(/socket\.io/);
 
-
 const activeClients = new Set<ReturnType<typeof toSocketIo>>();
 
 export const socketHandler = jungleWs.addEventListener('connection', (connection) => {
@@ -22,7 +21,6 @@ export const socketHandler = jungleWs.addEventListener('connection', (connection
   io.client.on('ping', () => {
     io.client.emit('pong', { timestamp: new Date().toISOString() });
   });
-
   
   io.client.on('trigger-nft-update', (_event, customPayload) => {
     const payload: NftUpdatedEvent = (customPayload as NftUpdatedEvent) || {

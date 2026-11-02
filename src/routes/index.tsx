@@ -12,6 +12,7 @@ import {
   ShoppingCart,
   User,
   Scan,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient, AUTH_TOKEN_KEY } from '../api/client';
@@ -203,7 +204,32 @@ function HomeDiscoveryPage() {
       );
       return res.data;
     },
-    onSuccess: () => {
+    onMutate: async ({ nftId, isFav }) => {
+      await queryClient.cancelQueries({ queryKey: ['favorites'] });
+      const previousFavorites = queryClient.getQueryData<FavoritesResponse>(['favorites']);
+      queryClient.setQueryData<FavoritesResponse>(['favorites'], (old) => {
+        const prevIds = old?.nftIds || [];
+        const prevItems = old?.items || [];
+        if (isFav) {
+          return {
+            nftIds: prevIds.filter((id) => id !== nftId),
+            items: prevItems.filter((item) => item.id !== nftId),
+          };
+        }
+        return {
+          nftIds: [...prevIds, nftId],
+          items: prevItems,
+        };
+      });
+      return { previousFavorites };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousFavorites) {
+        queryClient.setQueryData(['favorites'], context.previousFavorites);
+      }
+      toast.error('Falha ao atualizar favoritos. Estado anterior restaurado (Rollback).');
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
     },
   });
@@ -213,6 +239,22 @@ function HomeDiscoveryPage() {
     setMaxPriceInput(searchParams.maxPrice ? Number(searchParams.maxPrice) : 12.5);
     setMobileSearchInput(searchParams.search || '');
   }, [searchParams.minPrice, searchParams.maxPrice, searchParams.search]);
+
+  useEffect(() => {
+    const trimmed = mobileSearchInput.trim();
+    if (trimmed === activeSearch.trim()) return;
+    const timer = window.setTimeout(() => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          search: trimmed,
+          page: 1,
+        }),
+        replace: true,
+      });
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [mobileSearchInput, activeSearch, navigate]);
 
   useEffect(() => {
     const socket = io(JUNGLE_WS_URL, {
@@ -343,15 +385,28 @@ function HomeDiscoveryPage() {
           }}
           className="flex items-center gap-3"
         >
-          <div className="flex-1 h-11 bg-[#22150E] border border-[#332016] rounded-[12px] px-3.5 flex items-center gap-2.5">
+          <div className="flex-1 h-11 bg-[#22150E] border border-[#332016] focus-within:border-[#D1823C] rounded-[12px] px-3.5 flex items-center gap-2.5 transition-colors">
             <Search className="w-4 h-4 text-[#C68E5D] shrink-0" />
             <input
-              type="search"
+              type="text"
               value={mobileSearchInput}
               onChange={(e) => setMobileSearchInput(e.target.value)}
               placeholder="Explorar coleções"
               className="w-full bg-transparent text-xs text-[#FAF5F0] placeholder-[#C68E5D] outline-none"
             />
+            {mobileSearchInput && (
+              <button
+                type="button"
+                aria-label="Limpar busca mobile"
+                onClick={() => {
+                  setMobileSearchInput('');
+                  updateFilters({ search: '', page: 1 });
+                }}
+                className="text-[#C68E5D] hover:text-[#FAF5F0] p-0.5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
           <button
             type="button"
@@ -982,6 +1037,54 @@ function HomeDiscoveryPage() {
                     </select>
                   </div>
                 </div>
+
+                {(activeSearch || activeCategory !== 'All' || activeNetwork !== 'All') && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-[#1F1510] border border-[#2C1E16] rounded-lg px-3.5 py-2">
+                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      <span className="text-[#9A8473]">
+                        {catalogData?.total ?? 0}{' '}
+                        {(catalogData?.total ?? 0) === 1 ? 'NFT encontrado' : 'NFTs encontrados'}:
+                      </span>
+                      {activeSearch && (
+                        <button
+                          type="button"
+                          onClick={() => updateFilters({ search: '', page: 1 })}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
+                        >
+                          <span>Busca: &ldquo;{activeSearch}&rdquo;</span>
+                          <X className="w-3 h-3 text-[#D1823C]" />
+                        </button>
+                      )}
+                      {activeCategory !== 'All' && (
+                        <button
+                          type="button"
+                          onClick={() => updateFilters({ category: 'All', page: 1 })}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
+                        >
+                          <span>Coleção: {activeCategory}</span>
+                          <X className="w-3 h-3 text-[#D1823C]" />
+                        </button>
+                      )}
+                      {activeNetwork !== 'All' && (
+                        <button
+                          type="button"
+                          onClick={() => updateFilters({ network: 'All', page: 1 })}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2B1B12] border border-[#432919] text-[#FAF5F0] hover:border-[#D1823C] transition-colors cursor-pointer"
+                        >
+                          <span>Rede: {activeNetwork}</span>
+                          <X className="w-3 h-3 text-[#D1823C]" />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetAllFilters}
+                      className="text-[11px] font-semibold text-[#D1823C] hover:underline cursor-pointer"
+                    >
+                      Limpar tudo
+                    </button>
+                  </div>
+                )}
 
                 {isLoading && (
                   <div

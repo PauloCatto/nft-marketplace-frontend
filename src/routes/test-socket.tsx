@@ -36,7 +36,6 @@ function SocketTestPage() {
 
     socket.on('nft.updated', (event: NftUpdatedEvent) => {
       setReceivedEvent(event);
-
       
       const isValid =
         event.nftId === 'nft-1' &&
