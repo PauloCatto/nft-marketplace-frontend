@@ -1,9 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/((?!mockServiceWorker\\.js|assets/|vite\\.svg).*)",
+      "source": "/((?!api/|mockServiceWorker\\.js|assets/|favicon\\.svg|icons\\.svg).*)",
       "destination": "/index.html"
     }
   ]
 }
-

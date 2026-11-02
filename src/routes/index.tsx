@@ -577,7 +577,7 @@ function HomeDiscoveryPage() {
 
   const activeHero = HERO_SLIDES[heroIndex] || HERO_SLIDES[0];
   const totalPages = Math.max(1, catalogData?.totalPages || 4);
-  const items = catalogData?.items || [];
+  const items = Array.isArray(catalogData?.items) ? catalogData.items : [];
   const leftColumnItems = items.filter((_, idx) => idx % 2 === 0);
   const rightColumnItems = items.filter((_, idx) => idx % 2 === 1);
 
@@ -1703,7 +1703,7 @@ function HomeDiscoveryPage() {
                   </div>
                 )}
 
-                {!isLoading && !isError && catalogData && catalogData.items.length === 0 && (
+                {!isLoading && !isError && catalogData && items.length === 0 && (
                   <div className="bg-[#1F1510] border border-[#2E2018] rounded-xl p-12 flex flex-col items-center justify-center text-center gap-4 my-4">
                     <p className="text-[#FAF5F0] font-bold text-base">
                       Nenhum NFT encontrado com os filtros selecionados
@@ -1722,9 +1722,9 @@ function HomeDiscoveryPage() {
                   </div>
                 )}
 
-                {!isLoading && !isError && catalogData && catalogData.items.length > 0 && (
+                {!isLoading && !isError && catalogData && items.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-5 lg:gap-x-6 gap-y-4 lg:gap-y-5">
-                    {catalogData.items.map((nft: NFT) => {
+                    {items.map((nft: NFT) => {
                       const isDesktopFav = Boolean(favoritesData?.nftIds?.includes(nft.id));
                       return (
                         <article

@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiErrorResponse } from '../types';
+import { enableMocking } from '../mocks/browser';
 
 export const AUTH_TOKEN_KEY = 'jungle_auth_token';
 
@@ -69,8 +70,34 @@ apiClient.interceptors.request.use(
 );
 
 apiClient.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError<ApiErrorResponse>) => {
+  async (response) => {
+    const retryCfg = response.config as InternalAxiosRequestConfig & { _swRetried?: boolean };
+    if (
+      typeof response.data === 'string' &&
+      response.data.trim().startsWith('<') &&
+      !retryCfg._swRetried
+    ) {
+      retryCfg._swRetried = true;
+      await enableMocking();
+      return apiClient.request(retryCfg);
+    }
+    return response;
+  },
+  async (error: AxiosError<ApiErrorResponse>) => {
+    const retryCfg = error.config as
+      | (InternalAxiosRequestConfig & { _swRetried?: boolean })
+      | undefined;
+    const isUnhandledBySw =
+      error.response &&
+      (typeof error.response.data === 'string' || !error.response.data?.error) &&
+      error.response.status === 404;
+
+    if (retryCfg && !retryCfg._swRetried && isUnhandledBySw) {
+      retryCfg._swRetried = true;
+      await enableMocking();
+      return apiClient.request(retryCfg);
+    }
+
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
