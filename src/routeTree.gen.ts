@@ -19,7 +19,6 @@ import { Route as MarketRouteImport } from './routes/market'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SupportRouteImport } from './routes/support'
-import { Route as TestSocketRouteImport } from './routes/test-socket'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 
 const IndexRoute = IndexRouteImport.update({
@@ -72,11 +71,6 @@ const SupportRoute = SupportRouteImport.update({
   path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TestSocketRoute = TestSocketRouteImport.update({
-  id: '/test-socket',
-  path: '/test-socket',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
   path: '/wishlist',
@@ -94,7 +88,6 @@ export interface FileRoutesByFullPath {
   '/offers': typeof OffersRoute
   '/profile': typeof ProfileRoute
   '/support': typeof SupportRoute
-  '/test-socket': typeof TestSocketRoute
   '/wishlist': typeof WishlistRoute
 }
 export interface FileRoutesByTo {
@@ -108,7 +101,6 @@ export interface FileRoutesByTo {
   '/offers': typeof OffersRoute
   '/profile': typeof ProfileRoute
   '/support': typeof SupportRoute
-  '/test-socket': typeof TestSocketRoute
   '/wishlist': typeof WishlistRoute
 }
 export interface FileRoutesById {
@@ -123,7 +115,6 @@ export interface FileRoutesById {
   '/offers': typeof OffersRoute
   '/profile': typeof ProfileRoute
   '/support': typeof SupportRoute
-  '/test-socket': typeof TestSocketRoute
   '/wishlist': typeof WishlistRoute
 }
 export interface FileRouteTypes {
@@ -139,7 +130,6 @@ export interface FileRouteTypes {
     | '/offers'
     | '/profile'
     | '/support'
-    | '/test-socket'
     | '/wishlist'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -153,7 +143,6 @@ export interface FileRouteTypes {
     | '/offers'
     | '/profile'
     | '/support'
-    | '/test-socket'
     | '/wishlist'
   id:
     | '__root__'
@@ -167,7 +156,6 @@ export interface FileRouteTypes {
     | '/offers'
     | '/profile'
     | '/support'
-    | '/test-socket'
     | '/wishlist'
   fileRoutesById: FileRoutesById
 }
@@ -182,7 +170,6 @@ export interface RootRouteChildren {
   OffersRoute: typeof OffersRoute
   ProfileRoute: typeof ProfileRoute
   SupportRoute: typeof SupportRoute
-  TestSocketRoute: typeof TestSocketRoute
   WishlistRoute: typeof WishlistRoute
 }
 
@@ -258,13 +245,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/test-socket': {
-      id: '/test-socket'
-      path: '/test-socket'
-      fullPath: '/test-socket'
-      preLoaderRoute: typeof TestSocketRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/wishlist': {
       id: '/wishlist'
       path: '/wishlist'
@@ -286,7 +266,6 @@ const rootRouteChildren: RootRouteChildren = {
   OffersRoute: OffersRoute,
   ProfileRoute: ProfileRoute,
   SupportRoute: SupportRoute,
-  TestSocketRoute: TestSocketRoute,
   WishlistRoute: WishlistRoute,
 }
 export const routeTree = rootRouteImport
