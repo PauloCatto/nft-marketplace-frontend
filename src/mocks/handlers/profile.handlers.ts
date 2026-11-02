@@ -14,10 +14,10 @@ function resolveProfileUser(request: Request): { userId: string; errorResponse?:
 }
 
 export const profileHandlers = [
-  
+
   http.get('*/api/profile', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveProfileUser(request);
     if (errorResponse) return errorResponse;
@@ -40,10 +40,10 @@ export const profileHandlers = [
       createdAt: user.createdAt,
     });
   }),
-  
+
   http.put('*/api/profile', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveProfileUser(request);
     if (errorResponse) return errorResponse;
@@ -68,10 +68,10 @@ export const profileHandlers = [
       createdAt: updated.createdAt,
     });
   }),
-  
+
   http.put('*/api/profile/password', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveProfileUser(request);
     if (errorResponse) return errorResponse;

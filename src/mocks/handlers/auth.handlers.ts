@@ -50,7 +50,7 @@ export const authHandlers = [
   
   http.post('*/api/auth/login', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const body = (await request.json()) as { email?: string; password?: string };
 
@@ -96,7 +96,7 @@ export const authHandlers = [
   
   http.post('*/api/auth/register', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const body = (await request.json()) as { name?: string; email?: string; password?: string };
 
@@ -143,7 +143,7 @@ export const authHandlers = [
   
   http.get('*/api/auth/me', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     if (scenario.sessionExpired) {
       return HttpResponse.json(

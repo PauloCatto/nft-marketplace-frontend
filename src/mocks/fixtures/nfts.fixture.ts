@@ -347,7 +347,7 @@ export const initialNFTsFixture: NFT[] = [
     updatedAt: '2026-03-22T10:00:00.000Z',
     history: [],
   },
-  
+
   {
     id: 'nft-10',
     version: 1,
@@ -646,7 +646,7 @@ export const initialNFTsFixture: NFT[] = [
     updatedAt: '2026-03-13T07:00:00.000Z',
     history: [],
   },
-  
+
   ...Array.from({ length: 18 }, (_, idx): NFT => {
     const num = idx + 19;
     const templates = [
@@ -684,6 +684,7 @@ export const initialNFTsFixture: NFT[] = [
       },
     ];
     const tpl = templates[idx % templates.length];
+    const dynamicPrice = (2.45 + idx * 0.52).toFixed(2);
     return {
       id: `nft-${num}`,
       version: 1,
@@ -693,8 +694,8 @@ export const initialNFTsFixture: NFT[] = [
       network: tpl.network,
       description: `Obra digital certificada da coleção ${tpl.collection}, numerada e verificada na rede ${tpl.network}.`,
       imageUrl: tpl.imageUrl,
-      priceEth: tpl.basePrice,
-      priceUsd: (Number(tpl.basePrice) * 3000).toFixed(2),
+      priceEth: dynamicPrice,
+      priceUsd: (Number(dynamicPrice) * 3000).toFixed(2),
       isNewLaunch: idx % 2 === 0,
       isTrending: idx % 3 === 0,
       creator: {

@@ -17,7 +17,7 @@ export const cartHandlers = [
   
   http.get('*/api/cart', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveCartUser(request);
     if (errorResponse) return errorResponse;
@@ -30,7 +30,7 @@ export const cartHandlers = [
   
   http.post('*/api/cart/items', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveCartUser(request);
     if (errorResponse) return errorResponse;
@@ -58,7 +58,7 @@ export const cartHandlers = [
   
   http.patch('*/api/cart/items/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveCartUser(request);
     if (errorResponse) return errorResponse;
@@ -80,7 +80,7 @@ export const cartHandlers = [
   
   http.delete('*/api/cart/items/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveCartUser(request);
     if (errorResponse) return errorResponse;
@@ -94,7 +94,7 @@ export const cartHandlers = [
   
   http.post('*/api/cart/merge', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const auth = requireAuth(request);
     if (auth.errorResponse) return auth.errorResponse;
@@ -112,7 +112,7 @@ export const cartHandlers = [
   
   http.post('*/api/cart/quote', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveCartUser(request);
     if (errorResponse) return errorResponse;

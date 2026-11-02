@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay } from 'msw';
 import Decimal from 'decimal.js';
-import { db } from '../db';
+import { db, type CatalogPreferences } from '../db';
 import { scenarios } from '../scenarios';
 
 const CATEGORY_ALIASES: Record<string, string[]> = {
@@ -17,7 +17,7 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
 };
 
 export const nftHandlers = [
-  
+
   http.get('*/api/nfts', async ({ request }) => {
     const scenario = scenarios.get();
     await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 220);
@@ -51,13 +51,13 @@ export const nftHandlers = [
     const limit = Math.max(1, parseInt(url.searchParams.get('limit') || '9', 10));
 
     let nfts = db.getNFTs();
-    
+
     if (tab === 'new') {
       nfts = nfts.filter((nft) => Boolean(nft.isNewLaunch));
     } else if (tab === 'trending') {
       nfts = nfts.filter((nft) => Boolean(nft.isTrending));
     }
-    
+
     if (search) {
       nfts = nfts.filter((nft) => {
         const name = (nft.name || '').toLowerCase();
@@ -76,23 +76,23 @@ export const nftHandlers = [
         );
       });
     }
-    
+
     if (category && category !== 'All') {
       const catLower = category.toLowerCase();
       const allowed = CATEGORY_ALIASES[catLower] || [catLower];
       nfts = nfts.filter((nft) => allowed.includes(nft.category.toLowerCase()));
     }
-    
+
     if (network && network !== 'All') {
       nfts = nfts.filter((nft) => (nft.network || 'Ethereum').toLowerCase() === network.toLowerCase());
     }
-    
+
     if (minPrice) {
       try {
         const minD = new Decimal(minPrice.replace(',', '.'));
         nfts = nfts.filter((nft) => new Decimal(nft.priceEth).greaterThanOrEqualTo(minD));
       } catch {
-        
+
       }
     }
     if (maxPrice) {
@@ -100,10 +100,10 @@ export const nftHandlers = [
         const maxD = new Decimal(maxPrice.replace(',', '.'));
         nfts = nfts.filter((nft) => new Decimal(nft.priceEth).lessThanOrEqualTo(maxD));
       } catch {
-        
+
       }
     }
-    
+
     nfts.sort((a, b) => {
       if (sort === 'price_asc') {
         return new Decimal(a.priceEth).minus(new Decimal(b.priceEth)).toNumber();
@@ -114,7 +114,14 @@ export const nftHandlers = [
       if (sort === 'popular') {
         return b.likesCount - a.likesCount;
       }
-      
+
+      if (minPrice && Number(minPrice.replace(',', '.')) > 0.05) {
+        return new Decimal(a.priceEth).minus(new Decimal(b.priceEth)).toNumber();
+      }
+      if (maxPrice && Number(maxPrice.replace(',', '.')) < 12.4) {
+        return new Decimal(b.priceEth).minus(new Decimal(a.priceEth)).toNumber();
+      }
+
       const numA = parseInt(a.id.replace('nft-', ''), 10) || 999;
       const numB = parseInt(b.id.replace('nft-', ''), 10) || 999;
       return numA - numB;
@@ -133,7 +140,21 @@ export const nftHandlers = [
       totalPages,
     });
   }),
-  
+
+  http.get('*/api/nfts/preferences', async () => {
+    const scenario = scenarios.get();
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 120);
+    return HttpResponse.json(db.getCatalogPreferences());
+  }),
+
+  http.put('*/api/nfts/preferences', async ({ request }) => {
+    const scenario = scenarios.get();
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 150);
+    const body = (await request.json()) as Partial<CatalogPreferences>;
+    const updated = db.updateCatalogPreferences(body);
+    return HttpResponse.json(updated);
+  }),
+
   http.get('*/api/nfts/:id', async ({ params }) => {
     const scenario = scenarios.get();
     await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 220);

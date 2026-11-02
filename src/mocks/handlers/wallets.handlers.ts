@@ -18,7 +18,7 @@ export const walletHandlers = [
   
   http.get('*/api/wallets', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveWalletUser(request);
     if (errorResponse) return errorResponse;
@@ -30,7 +30,7 @@ export const walletHandlers = [
   
   http.post('*/api/wallets', async ({ request }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveWalletUser(request);
     if (errorResponse) return errorResponse;
@@ -50,7 +50,7 @@ export const walletHandlers = [
   
   http.patch('*/api/wallets/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveWalletUser(request);
     if (errorResponse) return errorResponse;
@@ -71,7 +71,7 @@ export const walletHandlers = [
   
   http.delete('*/api/wallets/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
-    if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
+    await delay(scenario.latencyMs > 0 ? scenario.latencyMs : 200);
 
     const { userId, errorResponse } = resolveWalletUser(request);
     if (errorResponse) return errorResponse;
