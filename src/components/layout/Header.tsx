@@ -1,16 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, ShoppingCart, LogIn, LogOut, Menu, X, User } from 'lucide-react';
+import {
+  Search,
+  ShoppingCart,
+  LogIn,
+  LogOut,
+  Menu,
+  X,
+  User,
+  Sparkles,
+  ArrowUpRight,
+  Loader2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient, AUTH_TOKEN_KEY } from '../../api/client';
-import type { CartResponse, User as UserType } from '../../api/contracts';
+import type { CartResponse, NFTListResponse, User as UserType } from '../../api/contracts';
 import { AuthModal } from '../auth/AuthModal';
 
 interface HeaderProps {
   searchValue?: string;
   onSearchSubmit?: (query: string) => void;
 }
+
+const QUICK_SUGGESTIONS = [
+  'Emerald Ape',
+  'Nomad',
+  'Baron',
+  'Golden',
+  'Ethereum',
+  'Arte digital',
+];
 
 export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
   const navigate = useNavigate();
@@ -20,9 +40,59 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
 
   const [isSearchOpen, setIsSearchOpen] = useState(Boolean(searchValue));
   const [searchInput, setSearchInput] = useState(searchValue);
+  const [debouncedQuery, setDebouncedQuery] = useState(searchValue.trim());
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const isInternalChangeRef = useRef(false);
+
+  useEffect(() => {
+    if (!isInternalChangeRef.current) {
+      setSearchInput(searchValue);
+      setDebouncedQuery(searchValue.trim());
+      if (searchValue) {
+        setIsSearchOpen(true);
+      }
+    }
+    isInternalChangeRef.current = false;
+  }, [searchValue]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const trimmed = searchInput.trim();
+      setDebouncedQuery(trimmed);
+
+      if (!isSearchOpen) return;
+
+      if (onSearchSubmit && trimmed !== searchValue.trim()) {
+        isInternalChangeRef.current = true;
+        onSearchSubmit(trimmed);
+      }
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [searchInput, isSearchOpen, onSearchSubmit, searchValue]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+        if (!searchInput.trim()) {
+          setIsSearchOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [searchInput]);
 
   const hasToken =
     typeof window !== 'undefined' && Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY));
@@ -45,23 +115,77 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
     },
   });
 
+  const { data: livePreviewData, isFetching: isPreviewFetching } = useQuery<NFTListResponse>({
+    queryKey: ['nfts', 'navbar-preview', debouncedQuery],
+    queryFn: async ({ signal }) => {
+      const res = await apiClient.get<NFTListResponse>('/nfts', {
+        signal,
+        params: {
+          search: debouncedQuery || undefined,
+          limit: 5,
+          page: 1,
+        },
+      });
+      return res.data;
+    },
+    enabled: isSearchOpen && isDropdownOpen,
+  });
+
   const itemCount = cartData?.itemCount ?? 0;
   const currentUser = sessionData?.user;
+  const previewItems = livePreviewData?.items ?? [];
+  const previewTotal = livePreviewData?.total ?? 0;
 
-  const handleSearchFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const applySearchFilter = (query: string, scrollToCatalog = false) => {
+    const trimmed = query.trim();
+    isInternalChangeRef.current = true;
+    setSearchInput(query);
+    setDebouncedQuery(trimmed);
+
     if (onSearchSubmit) {
-      onSearchSubmit(searchInput.trim());
+      onSearchSubmit(trimmed);
     } else {
       navigate({
         to: '/',
         search: (prev: Record<string, unknown>) => ({
           ...prev,
-          search: searchInput.trim() || undefined,
+          search: trimmed || undefined,
           page: 1,
         }),
       });
     }
+
+    if (scrollToCatalog && currentPath === '/') {
+      const catalogSection = document.getElementById('catalogo-nfts');
+      if (catalogSection) {
+        catalogSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  const handleSearchFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsDropdownOpen(false);
+    applySearchFilter(searchInput, true);
+  };
+
+  const handleClearSearch = () => {
+    isInternalChangeRef.current = true;
+    setSearchInput('');
+    setDebouncedQuery('');
+    if (onSearchSubmit) {
+      onSearchSubmit('');
+    } else if (currentPath === '/') {
+      navigate({
+        to: '/',
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          search: undefined,
+          page: 1,
+        }),
+      });
+    }
+    searchInputRef.current?.focus();
   };
 
   const handleAuxiliaryNavClick = (label: string, targetSectionId?: string) => {
@@ -82,9 +206,8 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
     currentPath.startsWith('/pagamento');
 
   return (
-    <header className="w-full border-b border-[#2A1C15] pb-2.5">
+    <header className="w-full border-b border-[#2A1C15] pb-2.5 relative z-40">
       <div className="flex items-center justify-between gap-4">
-        
         <Link
           to="/"
           className="text-[#FAF5F0] font-extrabold text-base tracking-[0.12em] uppercase hover:text-[#D1823C] transition-colors"
@@ -92,7 +215,6 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
           KURIO
         </Link>
 
-        
         <nav aria-label="Navegação principal" className="hidden md:flex items-center gap-8 lg:gap-10">
           <Link
             to="/"
@@ -143,57 +265,204 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
           </button>
         </nav>
 
-        
         <div className="flex items-center gap-3 sm:gap-5">
-          
-          {isSearchOpen ? (
-            <form onSubmit={handleSearchFormSubmit} className="flex items-center gap-1.5">
-              <label htmlFor="header-search-input" className="sr-only">
-                Buscar NFTs por nome, coleção ou criador
-              </label>
-              <input
-                id="header-search-input"
-                type="search"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Buscar NFT ou coleção..."
-                autoFocus
-                className="w-40 sm:w-56 bg-[#1F1510] border border-[#3D2A1E] focus:border-[#D1823C] rounded-md px-3 py-1.5 text-xs text-[#FAF5F0] placeholder-[#8C7A6B] outline-none"
-              />
+          <div ref={searchContainerRef} className="relative">
+            {isSearchOpen ? (
+              <form
+                onSubmit={handleSearchFormSubmit}
+                className="flex items-center bg-[#1F1510] border border-[#3D2A1E] focus-within:border-[#D1823C] focus-within:ring-1 focus-within:ring-[#D1823C]/40 rounded-md px-2.5 py-1 transition-all"
+              >
+                <Search className="w-3.5 h-3.5 text-[#D1823C] shrink-0 mr-2" />
+                <label htmlFor="header-search-input" className="sr-only">
+                  Buscar NFTs por nome, coleção, criador ou rede
+                </label>
+                <input
+                  ref={searchInputRef}
+                  id="header-search-input"
+                  type="text"
+                  value={searchInput}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  onChange={(e) => {
+                    setSearchInput(e.target.value);
+                    setIsDropdownOpen(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setIsDropdownOpen(false);
+                      if (!searchInput.trim()) {
+                        setIsSearchOpen(false);
+                      }
+                    }
+                  }}
+                  placeholder="Filtrar NFT, coleção ou rede..."
+                  autoFocus
+                  autoComplete="off"
+                  className="w-44 sm:w-64 bg-transparent text-xs text-[#FAF5F0] placeholder-[#8C7A6B] outline-none"
+                />
+                {isPreviewFetching && (
+                  <Loader2 className="w-3.5 h-3.5 text-[#D1823C] animate-spin shrink-0 mr-1" />
+                )}
+                {searchInput ? (
+                  <button
+                    type="button"
+                    aria-label="Limpar busca"
+                    onClick={handleClearSearch}
+                    className="p-0.5 text-[#8C7A6B] hover:text-[#FAF5F0] transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    aria-label="Fechar busca"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsSearchOpen(false);
+                    }}
+                    className="p-0.5 text-[#8C7A6B] hover:text-[#FAF5F0] transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </form>
+            ) : (
               <button
-                type="submit"
-                aria-label="Executar busca"
-                className="p-1.5 text-[#D1823C] hover:text-[#FAF5F0] transition-colors cursor-pointer"
+                type="button"
+                aria-label="Abrir busca de NFTs"
+                onClick={() => {
+                  setIsSearchOpen(true);
+                  setIsDropdownOpen(true);
+                }}
+                className="p-2 text-[#FAF5F0] hover:text-[#D1823C] transition-colors cursor-pointer"
               >
                 <Search className="w-4 h-4" />
               </button>
-              <button
-                type="button"
-                aria-label="Fechar busca"
-                onClick={() => {
-                  setIsSearchOpen(false);
-                  if (searchInput) {
-                    setSearchInput('');
-                    onSearchSubmit?.('');
-                  }
-                }}
-                className="p-1 text-[#8C7A6B] hover:text-[#FAF5F0] transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </form>
-          ) : (
-            <button
-              type="button"
-              aria-label="Abrir busca de NFTs"
-              onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-[#FAF5F0] hover:text-[#D1823C] transition-colors cursor-pointer"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-          )}
+            )}
 
-          
+            {isSearchOpen && isDropdownOpen && (
+              <div
+                role="region"
+                aria-label="Sugestões e resultados da busca em tempo real"
+                className="absolute right-0 mt-2 w-[320px] sm:w-[370px] bg-[#1D120C] border border-[#3A2418] rounded-xl shadow-[0_18px_45px_rgba(0,0,0,0.75)] overflow-hidden z-50"
+              >
+                <div className="px-3.5 py-2.5 border-b border-[#2C1B12] flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#C9B3A3] flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-[#D1823C]" />
+                    {debouncedQuery
+                      ? `Resultados para "${debouncedQuery}" (${previewTotal})`
+                      : 'Sugestões rápidas'}
+                  </span>
+                  {debouncedQuery && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="text-[10.5px] text-[#D1823C] hover:underline font-semibold cursor-pointer"
+                    >
+                      Limpar filtro
+                    </button>
+                  )}
+                </div>
+
+                {!debouncedQuery && (
+                  <div className="px-3.5 py-2.5 border-b border-[#2C1B12] flex flex-wrap gap-1.5">
+                    {QUICK_SUGGESTIONS.map((term) => (
+                      <button
+                        key={term}
+                        type="button"
+                        onClick={() => {
+                          applySearchFilter(term, true);
+                        }}
+                        className="px-2.5 py-1 rounded-full bg-[#291910] hover:bg-[#D1823C] text-[#D7C5B7] hover:text-[#140D0A] text-[10.5px] font-medium transition-colors cursor-pointer"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="max-h-[290px] overflow-y-auto divide-y divide-[#281810]">
+                  {previewItems.length > 0 ? (
+                    previewItems.map((nft) => (
+                      <div
+                        key={nft.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          navigate({ to: '/mercado', search: { id: nft.id } });
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setIsDropdownOpen(false);
+                            navigate({ to: '/mercado', search: { id: nft.id } });
+                          }
+                        }}
+                        className="px-3.5 py-2.5 flex items-center justify-between gap-3 hover:bg-[#271810] transition-colors cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={nft.imageUrl}
+                            alt={nft.name}
+                            className="w-10 h-10 rounded-lg object-cover border border-[#3B2518] shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-xs font-bold text-[#FAF5F0] group-hover:text-[#D1823C] transition-colors truncate">
+                                {nft.name}
+                              </p>
+                              {nft.isTrending && (
+                                <span className="px-1.5 py-0.2 rounded bg-[#D1823C]/20 text-[#D1823C] text-[9px] font-extrabold uppercase shrink-0">
+                                  Raro
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10.5px] text-[#9A8473] truncate">
+                              {nft.collection} • {nft.network || 'Ethereum'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-extrabold text-[#D1823C]">
+                            {nft.priceEth} ETH
+                          </span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-[#8C7A6B] group-hover:text-[#D1823C] transition-colors" />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-6 text-center">
+                      <p className="text-xs text-[#C2B2A6] font-medium">
+                        Nenhum NFT encontrado para &ldquo;{debouncedQuery}&rdquo;
+                      </p>
+                      <p className="text-[11px] text-[#8C7A6B] mt-1">
+                        Tente buscar por nome, coleção (ex.: Ape, Nomad) ou rede.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {previewItems.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      applySearchFilter(searchInput, true);
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-[#24160E] hover:bg-[#2E1C12] border-t border-[#2C1B12] text-[11px] font-bold text-[#D1823C] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <span>
+                      Ver {previewTotal}{' '}
+                      {previewTotal === 1 ? 'resultado no catálogo' : 'resultados no catálogo'}
+                    </span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           <Link
             to="/carrinho"
             aria-label={`Carrinho de compras com ${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`}
@@ -208,18 +477,16 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
             </span>
           </Link>
 
-          
           {currentUser ? (
             <>
               <Link
                 to="/perfil"
                 aria-label="Acessar Perfil do colecionador e Carteiras"
                 title="Meu perfil e Carteiras"
-                className={`p-2 transition-colors cursor-pointer ${
-                  currentPath.startsWith('/perfil')
+                className={`p-2 transition-colors cursor-pointer ${currentPath.startsWith('/perfil')
                     ? 'text-[#D1823C]'
                     : 'text-[#FAF5F0] hover:text-[#D1823C]'
-                }`}
+                  }`}
               >
                 <User className="w-4 h-4" />
               </Link>
@@ -256,7 +523,6 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
             </button>
           )}
 
-          
           <button
             type="button"
             aria-label={isMobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
@@ -269,7 +535,6 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
         </div>
       </div>
 
-      
       {isMobileMenuOpen && (
         <nav
           aria-label="Menu mobile"
@@ -308,7 +573,6 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
         </nav>
       )}
 
-      
       <AuthModal
         isOpen={isAuthModalOpen}
         initialMode={authModalMode}
@@ -317,4 +581,3 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
     </header>
   );
 }
-

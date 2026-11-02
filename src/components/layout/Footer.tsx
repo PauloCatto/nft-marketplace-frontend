@@ -45,7 +45,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
               Proteja sua carteira e colecione arte digital verificada com confiança.
             </p>
           </div>
-
           
           <div className="flex flex-col gap-3 lg:px-7 lg:border-r lg:border-[#5C3D28]/60">
             <div
@@ -59,7 +58,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
               Conheça artistas, estúdios e comunidades que moldam a cultura digital na rede.
             </p>
           </div>
-
           
           <div className="flex flex-col gap-3 lg:px-7 lg:border-r lg:border-[#5C3D28]/60">
             <div
@@ -73,7 +71,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
               Receba calendários de cunhagem, novidades de listas de acesso e análises do mercado.
             </p>
           </div>
-
           
           <div className="flex flex-col gap-3 lg:pl-7">
             <h3 className="text-[#FAF5F0] font-bold text-sm leading-snug">
@@ -105,7 +102,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
             </p>
           </div>
         </div>
-
         
         <div className="bg-[#332215] px-6 sm:px-8 lg:px-10 py-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-center border-y border-[#422D1D]">
           <div className="text-[#FAF5F0] font-extrabold text-sm tracking-[0.08em] uppercase">
@@ -119,7 +115,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
           <div className="text-[#FAF5F0] text-xs font-medium">contato@email.com</div>
           <div className="text-[#FAF5F0] text-xs font-medium">+55 11 4002 8922</div>
         </div>
-
         
         <div className="p-6 sm:p-8 lg:p-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           
@@ -174,7 +169,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
               </li>
             </ul>
           </div>
-
           
           <div>
             <h4 className="text-[#FAF5F0] font-bold text-sm mb-4">
@@ -228,7 +222,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
               </li>
             </ul>
           </div>
-
           
           <div>
             <h4 className="text-[#FAF5F0] font-bold text-sm mb-4">
@@ -255,7 +248,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
               ))}
             </ul>
           </div>
-
           
           <div className="flex flex-col gap-6">
             <div>
@@ -274,7 +266,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
                     <path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.326-.043-1.557-.14-2.857-.14C11.928 2 10 3.657 10 6.7v2.8H7v4h3V22h4v-8.5z" />
                   </svg>
                 </button>
-
                 
                 <button
                   type="button"
@@ -295,7 +286,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
                     <circle cx="17.5" cy="6.5" r="1" className="fill-current stroke-none" />
                   </svg>
                 </button>
-
                 
                 <button
                   type="button"
@@ -307,7 +297,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
                     <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
                   </svg>
                 </button>
-
                 
                 <button
                   type="button"
@@ -319,7 +308,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
                     <path d="M6.94 5a2 2 0 1 1-4-.002 2 2 0 0 1 4 .002zM7 8.48H3V21h4V8.48zm6.32 0H9.34V21h3.94v-6.57c0-3.66 4.77-4 4.77 0V21H22v-7.93c0-6.17-7.06-5.94-8.72-2.91l.04-1.68z" />
                   </svg>
                 </button>
-
                 
                 <button
                   type="button"
@@ -349,7 +337,6 @@ export function Footer({ onSelectCategory }: FooterProps) {
           </div>
         </div>
       </div>
-
       
       <div className="pt-6 pb-2 text-center text-[11px] text-[#8C7A6B]">
         © 2026 Kurio. Propriedade digital para todos.
@@ -357,4 +344,3 @@ export function Footer({ onSelectCategory }: FooterProps) {
     </footer>
   );
 }
-

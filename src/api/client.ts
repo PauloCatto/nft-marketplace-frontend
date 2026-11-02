@@ -19,7 +19,6 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -32,7 +31,6 @@ apiClient.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
 
 apiClient.interceptors.response.use(
   (response) => response,
