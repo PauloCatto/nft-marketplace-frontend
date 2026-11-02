@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/((?!mockServiceWorker\\.js|assets/|vite\\.svg).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+
