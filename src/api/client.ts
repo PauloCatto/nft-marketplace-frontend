@@ -3,6 +3,31 @@ import type { ApiErrorResponse } from '../types';
 
 export const AUTH_TOKEN_KEY = 'jungle_auth_token';
 
+export interface RequireAuthDetail {
+  message?: string;
+  redirectTo?: '/carrinho' | '/pagamento' | '/perfil' | '/mercado' | '/';
+  onSuccess?: () => void;
+}
+
+export function isAuthenticated(): boolean {
+  return typeof window !== 'undefined' && Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY));
+}
+
+let pendingRequireAuth: RequireAuthDetail | null = null;
+
+export function consumePendingRequireAuth(): RequireAuthDetail | null {
+  const pending = pendingRequireAuth;
+  pendingRequireAuth = null;
+  return pending;
+}
+
+export function triggerRequireAuth(detail: RequireAuthDetail): void {
+  if (typeof window !== 'undefined') {
+    pendingRequireAuth = detail;
+    window.dispatchEvent(new CustomEvent<RequireAuthDetail>('jungle:require-auth', { detail }));
+  }
+}
+
 const getBaseURL = (): string => {
   if (typeof window !== 'undefined') {
     return '/api';

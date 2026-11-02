@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
-import { Heart, Search, AlertCircle, X, ChevronLeft, ShoppingCart } from 'lucide-react';
+import { Heart, Search, AlertCircle, X, ChevronLeft, ChevronRight, ShoppingCart, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { apiClient } from '../api/client';
+import { apiClient, isAuthenticated, triggerRequireAuth } from '../api/client';
 import type {
   CartResponse,
   FavoritesResponse,
@@ -67,37 +67,103 @@ const COLLECTOR_REVIEWS = [
   },
 ];
 
-const MAIS_DESTA_COLECAO_ITEMS = [
-  {
-    id: 'nft-4',
-    name: 'Cosmic Bloom #118',
-    priceEth: '1.29',
-    imageUrl: '/assets/nfts/card-4.png',
-  },
-  {
-    id: 'nft-5',
-    name: 'Violet Nomad #314',
-    priceEth: '1.39',
-    imageUrl: '/assets/nfts/card-5.png',
-  },
-  {
-    id: 'nft-6',
-    name: 'Ivory Baron #088',
-    priceEth: '1.79',
-    imageUrl: '/assets/nfts/card-6.png',
-  },
-  {
-    id: 'nft-7',
-    name: 'Golden Beat #207',
-    priceEth: '0.99',
-    imageUrl: '/assets/nfts/card-9.png',
-  },
-  {
-    id: 'nft-9',
-    name: 'Golden Signal #160',
-    priceEth: '0.39',
-    imageUrl: '/assets/nfts/card-9.png',
-  },
+const MAIS_DESTA_COLECAO_PAGES = [
+  [
+    {
+      id: 'nft-4',
+      name: 'Cosmic Bloom #118',
+      priceEth: '1.29',
+      imageUrl: '/assets/nfts/card-4.png',
+    },
+    {
+      id: 'nft-5',
+      name: 'Violet Nomad #314',
+      priceEth: '1.39',
+      imageUrl: '/assets/nfts/card-5.png',
+    },
+    {
+      id: 'nft-6',
+      name: 'Ivory Baron #088',
+      priceEth: '1.79',
+      imageUrl: '/assets/nfts/card-6.png',
+    },
+    {
+      id: 'nft-7',
+      name: 'Golden Beat #207',
+      priceEth: '0.99',
+      imageUrl: '/assets/nfts/card-7.png',
+    },
+    {
+      id: 'nft-9',
+      name: 'Golden Signal #160',
+      priceEth: '0.39',
+      imageUrl: '/assets/nfts/card-9.png',
+    },
+  ],
+  [
+    {
+      id: 'nft-1',
+      name: 'Emerald Ape #0042',
+      priceEth: '0.50',
+      imageUrl: '/assets/nfts/card-1.png',
+    },
+    {
+      id: 'nft-2',
+      name: 'Apex Predator #109',
+      priceEth: '0.85',
+      imageUrl: '/assets/nfts/card-2.png',
+    },
+    {
+      id: 'nft-3',
+      name: 'Shadow Weaver #077',
+      priceEth: '1.15',
+      imageUrl: '/assets/nfts/card-3.png',
+    },
+    {
+      id: 'nft-8',
+      name: 'Crimson Cyber #402',
+      priceEth: '0.75',
+      imageUrl: '/assets/nfts/card-8.png',
+    },
+    {
+      id: 'nft-4',
+      name: 'Cosmic Bloom #118',
+      priceEth: '1.29',
+      imageUrl: '/assets/nfts/card-4.png',
+    },
+  ],
+  [
+    {
+      id: 'nft-6',
+      name: 'Ivory Baron #088',
+      priceEth: '1.79',
+      imageUrl: '/assets/nfts/card-6.png',
+    },
+    {
+      id: 'nft-9',
+      name: 'Golden Signal #160',
+      priceEth: '0.39',
+      imageUrl: '/assets/nfts/card-9.png',
+    },
+    {
+      id: 'nft-5',
+      name: 'Violet Nomad #314',
+      priceEth: '1.39',
+      imageUrl: '/assets/nfts/card-5.png',
+    },
+    {
+      id: 'nft-1',
+      name: 'Emerald Ape #0042',
+      priceEth: '0.50',
+      imageUrl: '/assets/nfts/card-1.png',
+    },
+    {
+      id: 'nft-7',
+      name: 'Golden Beat #207',
+      priceEth: '0.99',
+      imageUrl: '/assets/nfts/card-7.png',
+    },
+  ],
 ];
 
 function MarketDetailPage() {
@@ -109,8 +175,16 @@ function MarketDetailPage() {
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedThumbIndex, setSelectedThumbIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
-  const [carouselDot, setCarouselDot] = useState<number>(1);
+  const [carouselDot, setCarouselDot] = useState<number>(0);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState<boolean>(false);
+
+  const nextCollectionPage = () => {
+    setCarouselDot((prev) => (prev + 1) % MAIS_DESTA_COLECAO_PAGES.length);
+  };
+
+  const prevCollectionPage = () => {
+    setCarouselDot((prev) => (prev - 1 + MAIS_DESTA_COLECAO_PAGES.length) % MAIS_DESTA_COLECAO_PAGES.length);
+  };
 
   useEffect(() => {
     setQuantity(1);
@@ -121,6 +195,7 @@ function MarketDetailPage() {
   const {
     data: nft,
     isLoading,
+    isFetching,
     isError,
     refetch,
   } = useQuery<NFT>({
@@ -263,12 +338,41 @@ function MarketDetailPage() {
     return '#0042';
   };
 
-  const relatedNfts = MAIS_DESTA_COLECAO_ITEMS;
+  const relatedNfts = MAIS_DESTA_COLECAO_PAGES[carouselDot] ?? MAIS_DESTA_COLECAO_PAGES[0];
   const mainArtwork = getMainArtworkUrl(nft);
   const maxAvailable = Math.max(1, nft?.availableEditions || 10);
 
+  const handleBuyAction = () => {
+    if (!isAuthenticated()) {
+      triggerRequireAuth({
+        message: 'Você precisa estar logado para adicionar este NFT ao carrinho.',
+        onSuccess: () => addToCartMutation.mutate(),
+      });
+      return;
+    }
+    addToCartMutation.mutate();
+  };
+
+  const handleFavoriteAction = () => {
+    if (!isAuthenticated()) {
+      triggerRequireAuth({
+        message: 'Faça login na sua conta para favoritar este NFT.',
+        onSuccess: () => favoriteMutation.mutate(isFavorited),
+      });
+      return;
+    }
+    favoriteMutation.mutate(isFavorited);
+  };
+
   return (
     <div className="min-h-screen w-full bg-[#140D0A] text-[#FAF5F0]">
+      {(isLoading || isFetching) && (
+        <div className="md:hidden min-h-screen flex flex-col items-center justify-center gap-3 bg-[#140D0A]">
+          <Loader2 className="w-8 h-8 text-[#D1823C] animate-spin" />
+          <span className="text-xs font-semibold text-[#C2B2A6]">Carregando detalhes do NFT...</span>
+        </div>
+      )}
+
       {!isLoading && !isError && nft && (
         <div className="md:hidden min-h-screen flex flex-col justify-between bg-[#140D0A]">
           <div className="flex flex-col">
@@ -286,13 +390,12 @@ function MarketDetailPage() {
                 type="button"
                 aria-label="Favoritar NFT"
                 aria-pressed={isFavorited}
-                onClick={() => favoriteMutation.mutate(isFavorited)}
+                onClick={handleFavoriteAction}
                 className="w-9 h-9 rounded-full bg-[#24160F] border border-[#3B261B] flex items-center justify-center text-[#D1823C] cursor-pointer"
               >
                 <Heart
-                  className={`w-4 h-4 ${
-                    isFavorited ? 'fill-[#D1823C] text-[#D1823C]' : 'text-[#D1823C]'
-                  }`}
+                  className={`w-4 h-4 ${isFavorited ? 'fill-[#D1823C] text-[#D1823C]' : 'text-[#D1823C]'
+                    }`}
                 />
               </button>
             </div>
@@ -335,11 +438,10 @@ function MarketDetailPage() {
                         key={ed.id}
                         type="button"
                         onClick={() => setSelectedEdition(ed.id)}
-                        className={`px-2.5 py-0.5 rounded-full text-[11px] uppercase transition-colors cursor-pointer ${
-                          isSelected
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] uppercase transition-colors cursor-pointer ${isSelected
                             ? 'border border-[#D1823C] text-[#D1823C] font-bold bg-[#D1823C]/10'
                             : 'border border-[#382419] text-[#A8968A]'
-                        }`}
+                          }`}
                       >
                         {ed.mobileLabel}
                       </button>
@@ -390,7 +492,7 @@ function MarketDetailPage() {
               <button
                 type="button"
                 disabled={!nft.isAvailable || addToCartMutation.isPending}
-                onClick={() => addToCartMutation.mutate()}
+                onClick={handleBuyAction}
                 className="flex-1 h-12 rounded-full bg-[#C87D3B] hover:bg-[#D1823C] disabled:opacity-50 text-[#140D0A] font-bold text-[13.5px] flex items-center justify-center transition-colors cursor-pointer"
               >
                 {addToCartMutation.isPending ? 'Adicionando...' : 'Comprar NFT'}
@@ -399,7 +501,7 @@ function MarketDetailPage() {
               <button
                 type="button"
                 aria-label="Ir para o carrinho"
-                onClick={() => addToCartMutation.mutate()}
+                onClick={handleBuyAction}
                 className="w-12 h-12 rounded-full bg-[#321F15] border border-[#432B1E] text-[#D1823C] flex items-center justify-center shrink-0 transition-colors cursor-pointer"
               >
                 <ShoppingCart className="w-4 h-4 fill-[#D1823C]" />
@@ -422,27 +524,16 @@ function MarketDetailPage() {
           <span className="text-[#A8968A]">Mercado</span>
         </nav>
 
-        {isLoading && (
+        {(isLoading || isFetching) && (
           <div
             aria-busy="true"
             aria-label="Carregando detalhes do NFT"
-            className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16"
+            className="py-16 mb-10 flex flex-col items-center justify-center gap-3 bg-[#1F1510]/60 border border-[#2C1E16] rounded-xl"
           >
-            <div className="lg:col-span-6 flex gap-4">
-              <div className="flex flex-col gap-3 w-[84px] shrink-0">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="w-[84px] h-[84px] rounded-lg skeleton-shimmer" />
-                ))}
-              </div>
-              <div className="flex-1 aspect-square rounded-xl skeleton-shimmer" />
-            </div>
-            <div className="lg:col-span-6 flex flex-col gap-4">
-              <div className="h-8 w-2/3 rounded skeleton-shimmer" />
-              <div className="h-5 w-1/2 rounded skeleton-shimmer" />
-              <div className="h-20 w-full rounded skeleton-shimmer mt-2" />
-              <div className="h-10 w-1/2 rounded skeleton-shimmer mt-2" />
-              <div className="h-12 w-full rounded skeleton-shimmer mt-2" />
-            </div>
+            <Loader2 className="w-8 h-8 text-[#D1823C] animate-spin" />
+            <span className="text-xs font-semibold text-[#C2B2A6]">
+              Carregando detalhes do NFT...
+            </span>
           </div>
         )}
 
@@ -492,11 +583,10 @@ function MarketDetailPage() {
                         aria-selected={isSelected}
                         aria-label={`Visualizar ângulo ${thumbIdx + 1} de ${nft.name}`}
                         onClick={() => setSelectedThumbIndex(thumbIdx)}
-                        className={`w-[74px] h-[74px] sm:w-[82px] sm:h-[82px] rounded-[8px] p-1.5 bg-[#24160F] overflow-hidden transition-all cursor-pointer ${
-                          isSelected
+                        className={`w-[74px] h-[74px] sm:w-[82px] sm:h-[82px] rounded-[8px] p-1.5 bg-[#24160F] overflow-hidden transition-all cursor-pointer ${isSelected
                             ? 'ring-2 ring-[#D1823C]'
                             : 'opacity-85 hover:opacity-100 hover:ring-1 hover:ring-[#D1823C]/50'
-                        }`}
+                          }`}
                       >
                         <img
                           src={mainArtwork}
@@ -585,11 +675,10 @@ function MarketDetailPage() {
                           role="radio"
                           aria-checked={isSelected}
                           onClick={() => setSelectedEdition(ed.id)}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase transition-colors cursor-pointer ${
-                            isSelected
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase transition-colors cursor-pointer ${isSelected
                               ? 'border border-[#D1823C] text-[#D1823C] bg-[#D1823C]/10'
                               : 'border border-transparent text-[#8C7A6B] hover:text-[#FAF5F0]'
-                          }`}
+                            }`}
                         >
                           {ed.label}
                         </button>
@@ -628,7 +717,7 @@ function MarketDetailPage() {
                     <button
                       type="button"
                       disabled={!nft.isAvailable || addToCartMutation.isPending}
-                      onClick={() => addToCartMutation.mutate()}
+                      onClick={handleBuyAction}
                       className="bg-[#D1823C] hover:bg-[#E0924B] disabled:opacity-50 text-[#140D0A] font-extrabold text-[11px] uppercase tracking-wider px-6 py-2.5 rounded-[5px] transition-colors cursor-pointer"
                     >
                       {addToCartMutation.isPending ? 'ADICIONANDO...' : 'COMPRAR'}
@@ -637,17 +726,15 @@ function MarketDetailPage() {
                     <button
                       type="button"
                       aria-pressed={isFavorited}
-                      onClick={() => favoriteMutation.mutate(isFavorited)}
-                      className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-[5px] border text-[11px] font-semibold transition-colors cursor-pointer ${
-                        isFavorited
+                      onClick={handleFavoriteAction}
+                      className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-[5px] border text-[11px] font-semibold transition-colors cursor-pointer ${isFavorited
                           ? 'border-[#D1823C] bg-[#D1823C]/15 text-[#D1823C]'
                           : 'border-[#5C3D28] hover:border-[#D1823C] text-[#C2B2A6] hover:text-[#FAF5F0]'
-                      }`}
+                        }`}
                     >
                       <Heart
-                        className={`w-3.5 h-3.5 ${
-                          isFavorited ? 'fill-[#D1823C] text-[#D1823C]' : 'text-[#C2B2A6]'
-                        }`}
+                        className={`w-3.5 h-3.5 ${isFavorited ? 'fill-[#D1823C] text-[#D1823C]' : 'text-[#C2B2A6]'
+                          }`}
                       />
                       <span>Favoritar</span>
                     </button>
@@ -722,11 +809,10 @@ function MarketDetailPage() {
                   role="tab"
                   aria-selected={activeTab === 'details'}
                   onClick={() => setActiveTab('details')}
-                  className={`relative pb-2.5 text-xs font-bold transition-colors cursor-pointer ${
-                    activeTab === 'details'
+                  className={`relative pb-2.5 text-xs font-bold transition-colors cursor-pointer ${activeTab === 'details'
                       ? 'text-[#D1823C]'
                       : 'text-[#FAF5F0] hover:text-[#D1823C]'
-                  }`}
+                    }`}
                 >
                   Detalhes do NFT
                   {activeTab === 'details' && (
@@ -742,11 +828,10 @@ function MarketDetailPage() {
                   role="tab"
                   aria-selected={activeTab === 'reviews'}
                   onClick={() => setActiveTab('reviews')}
-                  className={`relative pb-2.5 text-xs font-medium transition-colors cursor-pointer ${
-                    activeTab === 'reviews'
+                  className={`relative pb-2.5 text-xs font-medium transition-colors cursor-pointer ${activeTab === 'reviews'
                       ? 'text-[#D1823C] font-bold'
                       : 'text-[#FAF5F0] hover:text-[#D1823C]'
-                  }`}
+                    }`}
                 >
                   Avaliações de colecionadores (19)
                   {activeTab === 'reviews' && (
@@ -818,9 +903,9 @@ function MarketDetailPage() {
                 <h2 className="text-[#D1823C] font-bold text-xs">Mais desta coleção</h2>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5 transition-opacity duration-300">
                 {relatedNfts.map((item) => (
-                  <article key={item.id} className="flex flex-col group">
+                  <article key={`${carouselDot}-${item.id}`} className="flex flex-col group">
                     <div
                       role="button"
                       tabIndex={0}
@@ -861,9 +946,17 @@ function MarketDetailPage() {
               <div
                 role="tablist"
                 aria-label="Navegação da coleção"
-                className="flex items-center justify-center gap-2 mt-8"
+                className="flex items-center justify-center gap-3 mt-8"
               >
-                {[0, 1, 2].map((dotIdx) => {
+                <button
+                  type="button"
+                  onClick={prevCollectionPage}
+                  aria-label="Página anterior"
+                  className="text-[#8C7A6B] hover:text-[#D1823C] transition-colors p-1 cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {MAIS_DESTA_COLECAO_PAGES.map((_, dotIdx) => {
                   const isCurrent = carouselDot === dotIdx;
                   return (
                     <button
@@ -873,14 +966,22 @@ function MarketDetailPage() {
                       aria-selected={isCurrent}
                       aria-label={`Página ${dotIdx + 1} da coleção`}
                       onClick={() => setCarouselDot(dotIdx)}
-                      className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                      className={`h-2.5 rounded-full transition-all cursor-pointer ${
                         isCurrent
-                          ? 'bg-[#D1823C]'
-                          : 'border border-[#D1823C] bg-transparent hover:bg-[#D1823C]/40'
+                          ? 'w-6 bg-[#D1823C]'
+                          : 'w-2.5 border border-[#D1823C] bg-transparent hover:bg-[#D1823C]/40'
                       }`}
                     />
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={nextCollectionPage}
+                  aria-label="Próxima página"
+                  className="text-[#8C7A6B] hover:text-[#D1823C] transition-colors p-1 cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </section>
           </>

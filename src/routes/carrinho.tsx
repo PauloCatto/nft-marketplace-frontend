@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
 import { Trash2, AlertCircle, ChevronLeft } from 'lucide-react';
 import Decimal from 'decimal.js';
 import { toast } from 'sonner';
-import { apiClient } from '../api/client';
+import { apiClient, isAuthenticated, triggerRequireAuth } from '../api/client';
 import type {
   CartItem,
   CartResponse,
@@ -17,6 +17,15 @@ import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 
 export const Route = createFileRoute('/carrinho')({
+  beforeLoad: () => {
+    if (!isAuthenticated()) {
+      triggerRequireAuth({
+        message: 'Você precisa estar logado para acessar o carrinho de NFTs.',
+        redirectTo: '/carrinho',
+      });
+      throw redirect({ to: '/' });
+    }
+  },
   component: CartPage,
 });
 

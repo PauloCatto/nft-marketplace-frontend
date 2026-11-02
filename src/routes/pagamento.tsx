@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
 import { X, ChevronLeft, MoreVertical, Wallet as WalletIcon, AlertTriangle } from 'lucide-react';
 import Decimal from 'decimal.js';
 import { toast } from 'sonner';
-import { apiClient, AUTH_TOKEN_KEY } from '../api/client';
+import { apiClient, AUTH_TOKEN_KEY, isAuthenticated, triggerRequireAuth } from '../api/client';
 import type {
   CartItem,
   CartResponse,
@@ -21,6 +21,15 @@ import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 
 export const Route = createFileRoute('/pagamento')({
+  beforeLoad: () => {
+    if (!isAuthenticated()) {
+      triggerRequireAuth({
+        message: 'Você precisa estar logado para finalizar o pagamento.',
+        redirectTo: '/pagamento',
+      });
+      throw redirect({ to: '/' });
+    }
+  },
   component: CheckoutPaymentPage,
 });
 
@@ -249,7 +258,7 @@ function CheckoutPaymentPage() {
         setConfirmedOrder(null);
         setRejectedMessage(
           order.failureReason ||
-            'Pagamento recusado pela carteira simulada. Seus itens foram preservados no carrinho.'
+          'Pagamento recusado pela carteira simulada. Seus itens foram preservados no carrinho.'
         );
         toast.error(order.failureReason || 'Transação rejeitada pela carteira.');
       }
@@ -264,7 +273,7 @@ function CheckoutPaymentPage() {
       if (status === 409) {
         setQuoteStaleNotice(
           errMessage ||
-            'O preço ou a disponibilidade mudou durante a compra. A cotação foi atualizada; revise e confirme novamente.'
+          'O preço ou a disponibilidade mudou durante a compra. A cotação foi atualizada; revise e confirme novamente.'
         );
         queryClient.invalidateQueries({ queryKey: ['cart'] });
         refetchQuote();
@@ -282,7 +291,7 @@ function CheckoutPaymentPage() {
 
       toast.error(
         errMessage ||
-          'Não foi possível concluir a transação no momento. Você pode tentar novamente com segurança.'
+        'Não foi possível concluir a transação no momento. Você pode tentar novamente com segurança.'
       );
     },
   });
@@ -370,9 +379,8 @@ function CheckoutPaymentPage() {
               className="bg-[#22150E] rounded-[16px] px-4 py-3.5 flex items-center justify-between gap-3.5 cursor-pointer"
             >
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                  selectedMobileWallet === 'reserva' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
-                }`}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileWallet === 'reserva' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
+                  }`}
               >
                 {selectedMobileWallet === 'reserva' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -402,9 +410,8 @@ function CheckoutPaymentPage() {
               className="bg-[#22150E] rounded-[16px] px-4 py-3.5 flex items-center justify-between gap-3.5 cursor-pointer"
             >
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                  selectedMobileWallet === 'principal' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
-                }`}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileWallet === 'principal' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
+                  }`}
               >
                 {selectedMobileWallet === 'principal' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -438,11 +445,10 @@ function CheckoutPaymentPage() {
                 <span className="text-[#FAF5F0] text-[12.5px]">WalletConnect</span>
               </div>
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                  selectedMobileProvider === 'walletconnect'
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileProvider === 'walletconnect'
                     ? 'border-[#D1823C]'
                     : 'border-[#5A3B28]'
-                }`}
+                  }`}
               >
                 {selectedMobileProvider === 'walletconnect' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -464,9 +470,8 @@ function CheckoutPaymentPage() {
                 <span className="text-[#FAF5F0] text-[12.5px]">MetaMask</span>
               </div>
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                  selectedMobileProvider === 'metamask' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
-                }`}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileProvider === 'metamask' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
+                  }`}
               >
                 {selectedMobileProvider === 'metamask' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -488,9 +493,8 @@ function CheckoutPaymentPage() {
                 <span className="text-[#FAF5F0] text-[12.5px]">Coinbase Wallet</span>
               </div>
               <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                  selectedMobileProvider === 'coinbase' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
-                }`}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedMobileProvider === 'coinbase' ? 'border-[#D1823C]' : 'border-[#5A3B28]'
+                  }`}
               >
                 {selectedMobileProvider === 'coinbase' && (
                   <span className="w-2 h-2 rounded-full bg-[#D1823C]" />
@@ -902,11 +906,10 @@ function CheckoutPaymentPage() {
                   role="radio"
                   aria-checked={selectedPaymentMethod === 'multi'}
                   onClick={() => setSelectedPaymentMethod('multi')}
-                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 transition-colors cursor-pointer ${
-                    selectedPaymentMethod === 'multi'
+                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 transition-colors cursor-pointer ${selectedPaymentMethod === 'multi'
                       ? 'border-[#D1823C] bg-[#1F1510]'
                       : 'border-[#2C1E16] bg-[#140D0A] hover:border-[#4E3524]'
-                  }`}
+                    }`}
                 >
                   <span className="w-3.5 h-3.5 rounded-full border border-[#8C7A6B] flex items-center justify-center shrink-0">
                     {selectedPaymentMethod === 'multi' && (
@@ -927,11 +930,10 @@ function CheckoutPaymentPage() {
                   role="radio"
                   aria-checked={selectedPaymentMethod === 'metamask'}
                   onClick={() => setSelectedPaymentMethod('metamask')}
-                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 text-xs transition-colors cursor-pointer ${
-                    selectedPaymentMethod === 'metamask'
+                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 text-xs transition-colors cursor-pointer ${selectedPaymentMethod === 'metamask'
                       ? 'border-[#D1823C] bg-[#1F1510] text-[#FAF5F0] font-bold'
                       : 'border-[#2C1E16] bg-[#140D0A] text-[#C2B2A6] hover:border-[#4E3524]'
-                  }`}
+                    }`}
                 >
                   <span className="w-3.5 h-3.5 rounded-full border border-[#8C7A6B] flex items-center justify-center shrink-0">
                     {selectedPaymentMethod === 'metamask' && (
@@ -946,18 +948,16 @@ function CheckoutPaymentPage() {
                   role="radio"
                   aria-checked={selectedPaymentMethod === 'coinbase'}
                   onClick={() => setSelectedPaymentMethod('coinbase')}
-                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 text-xs transition-colors cursor-pointer ${
-                    selectedPaymentMethod === 'coinbase'
+                  className={`w-full h-10 rounded-[4px] border px-3.5 flex items-center gap-3 text-xs transition-colors cursor-pointer ${selectedPaymentMethod === 'coinbase'
                       ? 'border-[#D1823C] bg-[#1F1510] text-[#FAF5F0] font-bold'
                       : 'border-[#2C1E16] bg-[#140D0A] text-[#C2B2A6] hover:border-[#4E3524]'
-                  }`}
+                    }`}
                 >
                   <span
-                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                      selectedPaymentMethod === 'coinbase'
+                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${selectedPaymentMethod === 'coinbase'
                         ? 'border-[#D1823C]'
                         : 'border-[#8C7A6B]'
-                    }`}
+                      }`}
                   >
                     {selectedPaymentMethod === 'coinbase' && (
                       <span className="w-2 h-2 rounded-full bg-[#D1823C]" />

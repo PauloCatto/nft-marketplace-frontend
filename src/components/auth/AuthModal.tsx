@@ -10,9 +10,10 @@ interface AuthModalProps {
   isOpen: boolean;
   initialMode?: 'login' | 'register';
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function AuthModal({ isOpen, initialMode = 'login', onClose }: AuthModalProps) {
+export function AuthModal({ isOpen, initialMode = 'login', onClose, onSuccess }: AuthModalProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
@@ -58,13 +59,17 @@ export function AuthModal({ isOpen, initialMode = 'login', onClose }: AuthModalP
     }
     try {
       await apiClient.post('/cart/merge');
-    } catch {}
+    } catch { }
     queryClient.setQueryData(['auth', 'me'], { user: data.user });
     queryClient.invalidateQueries({ queryKey: ['cart'] });
     queryClient.invalidateQueries({ queryKey: ['favorites'] });
     toast.success(welcomeText);
     onClose();
-    navigate({ to: '/perfil' });
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      navigate({ to: '/perfil' });
+    }
   };
 
   const loginMutation = useMutation({
@@ -433,11 +438,10 @@ export function AuthModal({ isOpen, initialMode = 'login', onClose }: AuthModalP
                   setMode('login');
                   setErrorMessage(null);
                 }}
-                className={`transition-colors cursor-pointer ${
-                  mode === 'login'
+                className={`transition-colors cursor-pointer ${mode === 'login'
                     ? 'text-[#D1823C]'
                     : 'text-[#FAF5F0] hover:text-[#D1823C]'
-                }`}
+                  }`}
               >
                 Entrar
               </button>
@@ -454,11 +458,10 @@ export function AuthModal({ isOpen, initialMode = 'login', onClose }: AuthModalP
                   setMode('register');
                   setErrorMessage(null);
                 }}
-                className={`transition-colors cursor-pointer ${
-                  mode === 'register'
+                className={`transition-colors cursor-pointer ${mode === 'register'
                     ? 'text-[#D1823C]'
                     : 'text-[#FAF5F0] hover:text-[#D1823C]'
-                }`}
+                  }`}
               >
                 Criar conta
               </button>

@@ -5,19 +5,27 @@ import { initialNFTsFixture } from './fixtures/nfts.fixture';
 import { initialCouponsFixture, type Coupon } from './fixtures/coupons.fixture';
 import { initialWalletsFixture } from './fixtures/wallets.fixture';
 
-const DB_STORAGE_KEY = 'kurio_nft_mock_db_v12';
+const DB_STORAGE_KEY = 'kurio_nft_mock_db_v13';
+
+export interface CatalogPreferences {
+  tab: 'all' | 'new' | 'trending';
+  sort: 'newest' | 'price_asc' | 'price_desc' | 'popular';
+  minPrice?: string;
+  maxPrice?: string;
+}
 
 export interface DatabaseState {
   users: UserRecord[];
   nfts: NFT[];
-  favorites: Record<string, string[]>; 
-  carts: Record<string, CartItem[]>; 
+  favorites: Record<string, string[]>;
+  carts: Record<string, CartItem[]>;
   guestCart: CartItem[];
-  quotes: Record<string, Quotation>; 
-  orders: Record<string, Order[]>; 
+  quotes: Record<string, Quotation>;
+  orders: Record<string, Order[]>;
   idempotencyStore: Record<string, { orderId: string; payloadHash: string; order: Order }>;
-  wallets: Record<string, Wallet[]>; 
+  wallets: Record<string, Wallet[]>;
   coupons: Coupon[];
+  catalogPreferences: CatalogPreferences;
 }
 
 function getInitialCartItems(): CartItem[] {
@@ -67,6 +75,10 @@ function getInitialState(): DatabaseState {
       'user-sam': initialWalletsFixture.filter((w) => w.userId === 'user-sam'),
     },
     coupons: JSON.parse(JSON.stringify(initialCouponsFixture)),
+    catalogPreferences: {
+      tab: 'all',
+      sort: 'newest',
+    },
   };
 }
 
@@ -156,6 +168,23 @@ class MockDatabase {
   
   public getNFTs(): NFT[] {
     return [...this.state.nfts];
+  }
+
+  public getCatalogPreferences(): CatalogPreferences {
+    if (!this.state.catalogPreferences) {
+      this.state.catalogPreferences = { tab: 'all', sort: 'newest' };
+    }
+    return { ...this.state.catalogPreferences };
+  }
+
+  public updateCatalogPreferences(partial: Partial<CatalogPreferences>): CatalogPreferences {
+    const current = this.getCatalogPreferences();
+    this.state.catalogPreferences = {
+      ...current,
+      ...partial,
+    };
+    this.save();
+    return { ...this.state.catalogPreferences };
   }
 
   public findNFTById(id: string): NFT | undefined {
