@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AprendaRouteImport } from './routes/aprenda'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
+import { Route as CriadoresRouteImport } from './routes/criadores'
 import { Route as MercadoRouteImport } from './routes/mercado'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
 import { Route as PerfilRouteImport } from './routes/perfil'
@@ -21,9 +23,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AprendaRoute = AprendaRouteImport.update({
+  id: '/aprenda',
+  path: '/aprenda',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CarrinhoRoute = CarrinhoRouteImport.update({
   id: '/carrinho',
   path: '/carrinho',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadoresRoute = CriadoresRouteImport.update({
+  id: '/criadores',
+  path: '/criadores',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MercadoRoute = MercadoRouteImport.update({
@@ -49,7 +61,9 @@ const TestSocketRoute = TestSocketRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/aprenda': typeof AprendaRoute
   '/carrinho': typeof CarrinhoRoute
+  '/criadores': typeof CriadoresRoute
   '/mercado': typeof MercadoRoute
   '/pagamento': typeof PagamentoRoute
   '/perfil': typeof PerfilRoute
@@ -57,7 +71,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/aprenda': typeof AprendaRoute
   '/carrinho': typeof CarrinhoRoute
+  '/criadores': typeof CriadoresRoute
   '/mercado': typeof MercadoRoute
   '/pagamento': typeof PagamentoRoute
   '/perfil': typeof PerfilRoute
@@ -66,7 +82,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/aprenda': typeof AprendaRoute
   '/carrinho': typeof CarrinhoRoute
+  '/criadores': typeof CriadoresRoute
   '/mercado': typeof MercadoRoute
   '/pagamento': typeof PagamentoRoute
   '/perfil': typeof PerfilRoute
@@ -75,13 +93,30 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/carrinho' | '/mercado' | '/pagamento' | '/perfil' | '/test-socket'
+    | '/'
+    | '/aprenda'
+    | '/carrinho'
+    | '/criadores'
+    | '/mercado'
+    | '/pagamento'
+    | '/perfil'
+    | '/test-socket'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/carrinho' | '/mercado' | '/pagamento' | '/perfil' | '/test-socket'
+  to:
+    | '/'
+    | '/aprenda'
+    | '/carrinho'
+    | '/criadores'
+    | '/mercado'
+    | '/pagamento'
+    | '/perfil'
+    | '/test-socket'
   id:
     | '__root__'
     | '/'
+    | '/aprenda'
     | '/carrinho'
+    | '/criadores'
     | '/mercado'
     | '/pagamento'
     | '/perfil'
@@ -90,7 +125,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AprendaRoute: typeof AprendaRoute
   CarrinhoRoute: typeof CarrinhoRoute
+  CriadoresRoute: typeof CriadoresRoute
   MercadoRoute: typeof MercadoRoute
   PagamentoRoute: typeof PagamentoRoute
   PerfilRoute: typeof PerfilRoute
@@ -106,11 +143,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/aprenda': {
+      id: '/aprenda'
+      path: '/aprenda'
+      fullPath: '/aprenda'
+      preLoaderRoute: typeof AprendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/carrinho': {
       id: '/carrinho'
       path: '/carrinho'
       fullPath: '/carrinho'
       preLoaderRoute: typeof CarrinhoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadores': {
+      id: '/criadores'
+      path: '/criadores'
+      fullPath: '/criadores'
+      preLoaderRoute: typeof CriadoresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mercado': {
@@ -146,7 +197,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AprendaRoute: AprendaRoute,
   CarrinhoRoute: CarrinhoRoute,
+  CriadoresRoute: CriadoresRoute,
   MercadoRoute: MercadoRoute,
   PagamentoRoute: PagamentoRoute,
   PerfilRoute: PerfilRoute,

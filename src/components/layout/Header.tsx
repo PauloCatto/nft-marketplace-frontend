@@ -179,17 +179,8 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
     searchInputRef.current?.focus();
   };
 
-  const handleAuxiliaryNavClick = (label: string, targetSectionId?: string) => {
-    setIsMobileMenuOpen(false);
-    if (targetSectionId && currentPath === '/') {
-      const el = document.getElementById(targetSectionId);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-        return;
-      }
-    }
-    toast.info(`Seção "${label}": navegando para a vitrine correspondente.`);
-  };
+  const isCreatorsActive = currentPath.startsWith('/criadores');
+  const isLearnActive = currentPath.startsWith('/aprenda');
 
   const isMarketActive =
     currentPath.startsWith('/mercado') ||
@@ -241,21 +232,39 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
             )}
           </Link>
 
-          <button
-            type="button"
-            onClick={() => handleAuxiliaryNavClick('Criadores', 'destaques-criadores')}
-            className="py-1.5 text-xs font-medium text-[#C2B2A6] hover:text-[#FAF5F0] transition-colors cursor-pointer"
+          <Link
+            to="/criadores"
+            className={`relative py-1.5 text-xs font-medium transition-colors ${
+              isCreatorsActive
+                ? 'text-[#D1823C] font-semibold'
+                : 'text-[#C2B2A6] hover:text-[#FAF5F0]'
+            }`}
           >
             Criadores
-          </button>
+            {isCreatorsActive && (
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-[11px] left-0 right-0 h-[2.5px] bg-[#D1823C] rounded-full"
+              />
+            )}
+          </Link>
 
-          <button
-            type="button"
-            onClick={() => handleAuxiliaryNavClick('Aprenda', 'diario-cunhagem')}
-            className="py-1.5 text-xs font-medium text-[#C2B2A6] hover:text-[#FAF5F0] transition-colors cursor-pointer"
+          <Link
+            to="/aprenda"
+            className={`relative py-1.5 text-xs font-medium transition-colors ${
+              isLearnActive
+                ? 'text-[#D1823C] font-semibold'
+                : 'text-[#C2B2A6] hover:text-[#FAF5F0]'
+            }`}
           >
             Aprenda
-          </button>
+            {isLearnActive && (
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-[11px] left-0 right-0 h-[2.5px] bg-[#D1823C] rounded-full"
+              />
+            )}
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3 sm:gap-5">
@@ -572,20 +581,24 @@ export function Header({ searchValue = '', onSearchSubmit }: HeaderProps) {
           >
             Mercado
           </Link>
-          <button
-            type="button"
-            onClick={() => handleAuxiliaryNavClick('Criadores', 'destaques-criadores')}
-            className="text-left text-sm text-[#C2B2A6] hover:text-[#FAF5F0] py-1.5"
+          <Link
+            to="/criadores"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`text-sm py-1.5 ${
+              isCreatorsActive ? 'font-semibold text-[#D1823C]' : 'text-[#C2B2A6] hover:text-[#FAF5F0]'
+            }`}
           >
             Criadores
-          </button>
-          <button
-            type="button"
-            onClick={() => handleAuxiliaryNavClick('Aprenda', 'diario-cunhagem')}
-            className="text-left text-sm text-[#C2B2A6] hover:text-[#FAF5F0] py-1.5"
+          </Link>
+          <Link
+            to="/aprenda"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`text-sm py-1.5 ${
+              isLearnActive ? 'font-semibold text-[#D1823C]' : 'text-[#C2B2A6] hover:text-[#FAF5F0]'
+            }`}
           >
             Aprenda
-          </button>
+          </Link>
         </nav>
       )}
 

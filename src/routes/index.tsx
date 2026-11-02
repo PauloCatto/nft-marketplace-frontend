@@ -16,6 +16,8 @@ import {
   X,
   Loader2,
   BookOpen,
+  CheckCircle2,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient, AUTH_TOKEN_KEY, isAuthenticated, triggerRequireAuth } from '../api/client';
@@ -115,7 +117,7 @@ const HERO_SLIDES: HeroSlide[] = [
       'Obras digitais raras criadas com estética orgânica e benefícios exclusivos para colecionadores verificados na rede.',
     imageUrl: '/assets/nfts/sage-nomad-featured.png',
     imageAlt: 'Sage Nomad #009 — Macaco com chapéu bucket verde-oliva e moletom roxo',
-    mobileMainImage: '/assets/nfts/card-2.png',
+    mobileMainImage: '/assets/nfts/sage-nomad-featured.png',
     mobileOverlapImage: '/assets/nfts/card-5.png',
   },
   {
@@ -278,6 +280,7 @@ function HomeDiscoveryPage() {
   const [mobileSearchInput, setMobileSearchInput] = useState(activeSearch);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<'catalog' | 'favorites'>('catalog');
   const [minPriceInput, setMinPriceInput] = useState<number>(
     searchParams.minPrice ? Number(searchParams.minPrice) : 0.02
   );
@@ -341,6 +344,7 @@ function HomeDiscoveryPage() {
     onMutate: async ({ nftId, isFav }) => {
       await queryClient.cancelQueries({ queryKey: ['favorites'] });
       const previousFavorites = queryClient.getQueryData<FavoritesResponse>(['favorites']);
+      const foundNft = catalogData?.items.find((item) => item.id === nftId);
       queryClient.setQueryData<FavoritesResponse>(['favorites'], (old) => {
         const prevIds = old?.nftIds || [];
         const prevItems = old?.items || [];
@@ -352,7 +356,7 @@ function HomeDiscoveryPage() {
         }
         return {
           nftIds: [...prevIds, nftId],
-          items: prevItems,
+          items: foundNft ? [...prevItems, foundNft] : prevItems,
         };
       });
       return { previousFavorites };
@@ -788,20 +792,105 @@ function HomeDiscoveryPage() {
           </div>
         )}
 
-        <div className="mt-4 grid grid-cols-2 gap-3.5 items-start">
-          <div className="flex flex-col gap-4">
-            {leftColumnItems.map((nft, colIdx) => {
-              const globalIdx = colIdx * 2;
-              const isFav = Boolean(favoritesData?.nftIds?.includes(nft.id)) || nft.id === 'nft-1';
-              const showRareBadge = nft.id === 'nft-3' || colIdx === 1;
+        {mobileView === 'favorites' ? (
+          <div className="mt-5 flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-2 border-b border-[#2C1E16]">
+              <div className="flex items-center gap-2">
+                <Heart className="w-4 h-4 fill-[#D1823C] text-[#D1823C]" />
+                <h2 className="text-[#FAF5F0] font-bold text-sm">Meus Favoritos</h2>
+                <span className="text-[#D1823C] text-xs font-bold">
+                  ({favoritesData?.items?.length || 0})
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileView('catalog')}
+                className="text-[11px] text-[#C2B2A6] hover:text-[#D1823C] transition-colors cursor-pointer"
+              >
+                Voltar ao catálogo
+              </button>
+            </div>
 
-              return (
-                <article key={nft.id} className="flex flex-col">
-                  <div className="bg-[#23150E] rounded-[16px] p-2 relative">
-                    {colIdx === 0 && (
+            {(!favoritesData?.items || favoritesData.items.length === 0) ? (
+              <div className="bg-[#1F1510] border border-[#2C1E16] rounded-xl p-8 flex flex-col items-center justify-center text-center gap-3 my-4">
+                <Heart className="w-10 h-10 text-[#4D301D]" />
+                <p className="text-[#FAF5F0] font-bold text-xs">Nenhum NFT favoritado ainda</p>
+                <p className="text-[#A8968A] text-[11px] max-w-[220px]">
+                  Navegue pelo catálogo e toque no ícone de coração para salvar seus NFTs favoritos aqui.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMobileView('catalog')}
+                  className="bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-xs px-4 py-2 rounded-md transition-colors cursor-pointer mt-1"
+                >
+                  Explorar catálogo
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3.5 items-start">
+                {favoritesData.items.map((favNft) => (
+                  <article key={favNft.id} className="flex flex-col">
+                    <div className="bg-[#23150E] rounded-[16px] p-2 relative">
                       <button
                         type="button"
-                        aria-label={`Favoritar ${nft.name}`}
+                        aria-label={`Remover ${favNft.name} dos favoritos`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          favoriteMutation.mutate({
+                            nftId: favNft.id,
+                            isFav: true,
+                          });
+                        }}
+                        className="absolute top-3.5 right-3.5 z-10 w-7 h-7 rounded-full bg-[#24160F]/90 border border-[#4A3222] flex items-center justify-center text-[#D1823C] cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                      >
+                        <Heart className="w-3.5 h-3.5 fill-[#D1823C] text-[#D1823C]" />
+                      </button>
+
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigate({ to: '/mercado', search: { id: favNft.id } })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            navigate({ to: '/mercado', search: { id: favNft.id } });
+                          }
+                        }}
+                        className="w-full aspect-[150/174] rounded-[12px] overflow-hidden cursor-pointer"
+                      >
+                        <img
+                          src={favNft.imageUrl}
+                          alt={favNft.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+
+                    <h3 className="text-[#FAF5F0] text-[12px] font-medium mt-2 truncate px-0.5">
+                      {favNft.name}
+                    </h3>
+                    <span className="text-[#D1823C] font-extrabold text-[12px] mt-0.5 px-0.5">
+                      {favNft.priceEth} ETH
+                    </span>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-4 grid grid-cols-2 gap-3.5 items-start">
+            <div className="flex flex-col gap-4">
+              {leftColumnItems.map((nft, colIdx) => {
+                const globalIdx = colIdx * 2;
+                const isFav = Boolean(favoritesData?.nftIds?.includes(nft.id));
+                const showRareBadge = nft.id === 'nft-3' || colIdx === 1;
+
+                return (
+                  <article key={nft.id} className="flex flex-col">
+                    <div className="bg-[#23150E] rounded-[16px] p-2 relative">
+                      <button
+                        type="button"
+                        aria-label={isFav ? `Remover ${nft.name} dos favoritos` : `Favoritar ${nft.name}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!isAuthenticated()) {
@@ -824,108 +913,164 @@ function HomeDiscoveryPage() {
                       >
                         <Heart
                           className={`w-3.5 h-3.5 ${
-                            isFav && favoritesData?.nftIds?.includes(nft.id)
+                            isFav
                               ? 'fill-[#D1823C] text-[#D1823C]'
                               : 'text-[#D1823C]'
                           }`}
                         />
                       </button>
-                    )}
 
-                    {showRareBadge && (
-                      <span className="absolute top-3.5 left-0 z-10 bg-[#C87D3B] text-[#140D0A] font-bold text-[10px] uppercase px-3 py-1 rounded-r-[4px]">
-                        RARO
-                      </span>
-                    )}
+                      {showRareBadge && (
+                        <span className="absolute top-3.5 left-0 z-10 bg-[#C87D3B] text-[#140D0A] font-bold text-[10px] uppercase px-3 py-1 rounded-r-[4px]">
+                          RARO
+                        </span>
+                      )}
 
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => navigate({ to: '/mercado', search: { id: nft.id } })}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          navigate({ to: '/mercado', search: { id: nft.id } });
-                        }
-                      }}
-                      className="w-full aspect-[150/174] rounded-[12px] overflow-hidden cursor-pointer"
-                    >
-                      <img
-                        src={getMobileCardArtwork(nft, globalIdx)}
-                        alt={nft.name}
-                        className="w-full h-full object-cover"
-                      />
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigate({ to: '/mercado', search: { id: nft.id } })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            navigate({ to: '/mercado', search: { id: nft.id } });
+                          }
+                        }}
+                        className="w-full aspect-[150/174] rounded-[12px] overflow-hidden cursor-pointer"
+                      >
+                        <img
+                          src={getMobileCardArtwork(nft, globalIdx)}
+                          alt={nft.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <h3 className="text-[#FAF5F0] text-[12px] font-medium mt-2 truncate px-0.5">
-                    {nft.name}
-                  </h3>
-                  <span className="text-[#D1823C] font-extrabold text-[12px] mt-0.5 px-0.5">
-                    {nft.priceEth} ETH
-                  </span>
-                </article>
-              );
-            })}
-          </div>
+                    <h3 className="text-[#FAF5F0] text-[12px] font-medium mt-2 truncate px-0.5">
+                      {nft.name}
+                    </h3>
+                    <span className="text-[#D1823C] font-extrabold text-[12px] mt-0.5 px-0.5">
+                      {nft.priceEth} ETH
+                    </span>
+                  </article>
+                );
+              })}
+            </div>
 
-          <div className="flex flex-col gap-4 mt-5">
-            {rightColumnItems.map((nft, colIdx) => {
-              const globalIdx = colIdx * 2 + 1;
-              return (
-                <article key={nft.id} className="flex flex-col">
-                  <div className="bg-[#23150E] rounded-[16px] p-2 relative">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => navigate({ to: '/mercado', search: { id: nft.id } })}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          navigate({ to: '/mercado', search: { id: nft.id } });
-                        }
-                      }}
-                      className="w-full aspect-[150/174] rounded-[12px] overflow-hidden cursor-pointer"
-                    >
-                      <img
-                        src={getMobileCardArtwork(nft, globalIdx)}
-                        alt={nft.name}
-                        className="w-full h-full object-cover"
-                      />
+            <div className="flex flex-col gap-4 mt-5">
+              {rightColumnItems.map((nft, colIdx) => {
+                const globalIdx = colIdx * 2 + 1;
+                const isFav = Boolean(favoritesData?.nftIds?.includes(nft.id));
+
+                return (
+                  <article key={nft.id} className="flex flex-col">
+                    <div className="bg-[#23150E] rounded-[16px] p-2 relative">
+                      <button
+                        type="button"
+                        aria-label={isFav ? `Remover ${nft.name} dos favoritos` : `Favoritar ${nft.name}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isAuthenticated()) {
+                            triggerRequireAuth({
+                              message: 'Faça login na sua conta para favoritar este NFT.',
+                              onSuccess: () =>
+                                favoriteMutation.mutate({
+                                  nftId: nft.id,
+                                  isFav: Boolean(favoritesData?.nftIds?.includes(nft.id)),
+                                }),
+                            });
+                            return;
+                          }
+                          favoriteMutation.mutate({
+                            nftId: nft.id,
+                            isFav: Boolean(favoritesData?.nftIds?.includes(nft.id)),
+                          });
+                        }}
+                        className="absolute top-3.5 right-3.5 z-10 w-7 h-7 rounded-full bg-[#24160F]/90 border border-[#4A3222] flex items-center justify-center text-[#D1823C] cursor-pointer"
+                      >
+                        <Heart
+                          className={`w-3.5 h-3.5 ${
+                            isFav
+                              ? 'fill-[#D1823C] text-[#D1823C]'
+                              : 'text-[#D1823C]'
+                          }`}
+                        />
+                      </button>
+
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigate({ to: '/mercado', search: { id: nft.id } })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            navigate({ to: '/mercado', search: { id: nft.id } });
+                          }
+                        }}
+                        className="w-full aspect-[150/174] rounded-[12px] overflow-hidden cursor-pointer"
+                      >
+                        <img
+                          src={getMobileCardArtwork(nft, globalIdx)}
+                          alt={nft.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <h3 className="text-[#FAF5F0] text-[12px] font-medium mt-2 truncate px-0.5">
-                    {nft.name}
-                  </h3>
-                  <span className="text-[#D1823C] font-extrabold text-[12px] mt-0.5 px-0.5">
-                    {nft.priceEth} ETH
-                  </span>
-                </article>
-              );
-            })}
+                    <h3 className="text-[#FAF5F0] text-[12px] font-medium mt-2 truncate px-0.5">
+                      {nft.name}
+                    </h3>
+                    <span className="text-[#D1823C] font-extrabold text-[12px] mt-0.5 px-0.5">
+                      {nft.priceEth} ETH
+                    </span>
+                  </article>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         <nav
           aria-label="Navegação inferior mobile"
           className="fixed bottom-0 left-0 right-0 z-40 h-[72px] bg-[#22150E] rounded-t-[26px] border-t border-[#332016] px-7 flex items-center justify-between shadow-[0_-8px_24px_rgba(0,0,0,0.45)]"
         >
           <div className="flex items-center gap-10">
-            <Link
-              to="/"
+            <button
+              type="button"
               aria-label="Início"
-              className="text-[#D1823C] p-1.5 transition-colors"
+              onClick={() => {
+                setMobileView('catalog');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`p-1.5 transition-colors cursor-pointer ${
+                mobileView === 'catalog' ? 'text-[#D1823C]' : 'text-[#C8A992] hover:text-[#D1823C]'
+              }`}
             >
-              <Home className="w-5 h-5 fill-[#D1823C]" />
-            </Link>
+              <Home className={`w-5 h-5 ${mobileView === 'catalog' ? 'fill-[#D1823C]' : ''}`} />
+            </button>
             <button
               type="button"
               aria-label="Favoritos"
-              onClick={() => toast.info('Exibindo seus NFTs favoritados.')}
-              className="text-[#C8A992] hover:text-[#D1823C] p-1.5 transition-colors cursor-pointer"
+              onClick={() => {
+                if (!isAuthenticated()) {
+                  triggerRequireAuth({
+                    message: 'Faça login na sua conta para visualizar seus favoritos.',
+                    onSuccess: () => setMobileView('favorites'),
+                  });
+                  return;
+                }
+                setMobileView('favorites');
+              }}
+              className={`p-1.5 transition-colors cursor-pointer relative ${
+                mobileView === 'favorites' ? 'text-[#D1823C]' : 'text-[#C8A992] hover:text-[#D1823C]'
+              }`}
             >
-              <Heart className="w-5 h-5 fill-[#C8A992]" />
+              <Heart className={`w-5 h-5 ${mobileView === 'favorites' ? 'fill-[#D1823C]' : ''}`} />
+              {(favoritesData?.nftIds?.length || 0) > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#D1823C] text-[#140D0A] text-[9px] font-extrabold flex items-center justify-center">
+                  {favoritesData?.nftIds?.length}
+                </span>
+              )}
             </button>
           </div>
 
@@ -1096,8 +1241,8 @@ function HomeDiscoveryPage() {
             aria-label="Catálogo de NFTs e Filtros"
             className="w-full flex flex-col"
           >
-            <div className="w-full flex flex-col lg:flex-row lg:items-stretch gap-6 lg:gap-8">
-              <aside className="w-full lg:w-[260px] shrink-0 flex flex-col justify-between">
+            <div className="w-full flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
+              <aside className="w-full lg:w-[260px] shrink-0 flex flex-col gap-6">
                 <div className="bg-[#1F1510] border border-[#2C1E16] rounded-xl p-4 sm:p-5 flex flex-col gap-4">
                   <div>
                     <h2 className="text-[#FAF5F0] font-bold text-xs mb-2">Coleções</h2>
@@ -1191,11 +1336,11 @@ function HomeDiscoveryPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col shrink-0 mt-5 lg:mt-0">
-                  <span className="text-[#D1823C] font-extrabold text-sm uppercase tracking-wide">
+                <div className="flex flex-col items-center text-center shrink-0">
+                  <span className="text-[#D1823C] font-extrabold text-[12.5px] uppercase tracking-wider block">
                     NFT EM DESTAQUE
                   </span>
-                  <span className="text-[#FAF5F0] font-bold text-xs uppercase tracking-wide text-center mt-1 mb-2.5">
+                  <span className="text-[#FAF5F0] font-bold text-[11px] uppercase tracking-wider block mt-0.5 mb-2.5">
                     OFERTA LIMITADA
                   </span>
                   <button
@@ -1207,21 +1352,21 @@ function HomeDiscoveryPage() {
                       })
                     }
                     aria-label="Ver oferta limitada Sage Nomad #009"
-                    className="w-full rounded-[14px] overflow-hidden hover:ring-2 hover:ring-[#D1823C] transition-all cursor-pointer"
+                    className="w-full rounded-[16px] overflow-hidden hover:ring-2 hover:ring-[#D1823C] transition-all cursor-pointer shadow-lg"
                   >
                     <img
                       src="/assets/nfts/sage-nomad-featured.png"
                       alt="NFT em destaque: Sage Nomad #009"
                       width={260}
-                      height={260}
+                      height={290}
                       loading="lazy"
-                      className="w-full aspect-square max-h-[220px] object-cover rounded-[14px]"
+                      className="w-full aspect-[260/290] max-h-[285px] object-cover rounded-[16px]"
                     />
                   </button>
                 </div>
               </aside>
 
-              <div className="flex-1 min-w-0 w-full flex flex-col justify-between gap-4">
+              <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
                 <div className="flex flex-col sm:flex-row sm:flex-nowrap sm:items-center justify-between gap-2 pb-1">
                   <div
                     role="tablist"
@@ -1424,7 +1569,7 @@ function HomeDiscoveryPage() {
                 )}
 
                 {!isLoading && !isError && catalogData && catalogData.items.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-5 lg:gap-x-6 gap-y-5 lg:gap-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-5 lg:gap-x-6 gap-y-4 lg:gap-y-5">
                     {catalogData.items.map((nft: NFT) => (
                       <article
                         key={nft.id}
@@ -1451,7 +1596,7 @@ function HomeDiscoveryPage() {
                               }
                             }}
                             aria-label={`Ver detalhes de ${nft.name}, preço ${nft.priceEth} ETH`}
-                            className="w-full aspect-square max-h-[220px] overflow-hidden relative cursor-pointer bg-[#24160F] rounded-[14px]"
+                            className="w-full aspect-square max-h-[200px] overflow-hidden relative cursor-pointer bg-[#24160F] rounded-[14px]"
                           >
                             <img
                               src={nft.imageUrl}
@@ -1532,66 +1677,68 @@ function HomeDiscoveryPage() {
           <section
             id="destaques-criadores"
             aria-label="Coleções e lançamentos em destaque"
-            className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6"
+            className="w-full flex flex-col gap-8"
           >
-            <div className="bg-[#24160F] rounded-[10px] overflow-hidden flex flex-col sm:flex-row items-stretch justify-between sm:h-[168px]">
-              <div className="w-full sm:w-[196px] sm:h-[168px] shrink-0 overflow-hidden">
-                <img
-                  src="/assets/nfts/banner-left-ape.png"
-                  alt="Lançamentos gênesis de edição limitada"
-                  width={196}
-                  height={168}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                />
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-[#24160F] rounded-[10px] overflow-hidden flex flex-col sm:flex-row items-stretch justify-between sm:h-[168px]">
+                <div className="w-full sm:w-[196px] sm:h-[168px] shrink-0 overflow-hidden">
+                  <img
+                    src="/assets/nfts/banner-left-ape.png"
+                    alt="Lançamentos gênesis de edição limitada"
+                    width={196}
+                    height={168}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-col items-end text-right justify-center flex-1 px-5 py-3.5">
+                  <h2 className="text-[#FAF5F0] font-bold text-xs sm:text-[13px] leading-snug mb-1.5 whitespace-nowrap">
+                    Lançamentos gênesis
+                    <br />
+                    de edição limitada
+                  </h2>
+                  <p className="text-[#B5A395] text-[10.5px] leading-[1.45] mb-3 max-w-[240px]">
+                    Colecione edições escassas diretamente dos criadores antes da revelação pública.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleExploreNewLaunches}
+                    className="inline-flex items-center gap-1.5 bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-[11px] px-4 py-1.5 rounded-[5px] transition-colors cursor-pointer"
+                  >
+                    <span>Explorar</span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-col items-end text-right justify-center flex-1 px-5 py-3.5">
-                <h2 className="text-[#FAF5F0] font-bold text-xs sm:text-[13px] leading-snug mb-1.5 whitespace-nowrap">
-                  Lançamentos gênesis
-                  <br />
-                  de edição limitada
-                </h2>
-                <p className="text-[#B5A395] text-[10.5px] leading-[1.45] mb-3 max-w-[240px]">
-                  Colecione edições escassas diretamente dos criadores antes da revelação pública.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleExploreNewLaunches}
-                  className="inline-flex items-center gap-1.5 bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-[11px] px-4 py-1.5 rounded-[5px] transition-colors cursor-pointer"
-                >
-                  <span>Explorar</span>
-                  <span aria-hidden="true">→</span>
-                </button>
-              </div>
-            </div>
 
-            <div className="bg-[#24160F] rounded-[10px] overflow-hidden flex flex-col sm:flex-row items-stretch justify-between sm:h-[168px]">
-              <div className="w-full sm:w-[196px] sm:h-[168px] shrink-0 overflow-hidden">
-                <img
-                  src="/assets/nfts/banner-right-ape.png"
-                  alt="Arte digital selecionada e muito mais"
-                  width={196}
-                  height={168}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex flex-col items-end text-right justify-center flex-1 px-5 py-3.5">
-                <h2 className="text-[#FAF5F0] font-bold text-xs sm:text-[13px] leading-snug mb-1.5 whitespace-nowrap">
-                  Arte digital selecionada
-                  <br />e muito mais
-                </h2>
-                <p className="text-[#B5A395] text-[10.5px] leading-[1.45] mb-3 max-w-[240px]">
-                  Explore novos artistas, coleções verificadas e obras digitais que definem a
-                </p>
-                <button
-                  type="button"
-                  onClick={handleExploreDigitalArt}
-                  className="inline-flex items-center gap-1.5 bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-[11px] px-4 py-1.5 rounded-[5px] transition-colors cursor-pointer"
-                >
-                  <span>Explorar</span>
-                  <span aria-hidden="true">→</span>
-                </button>
+              <div className="bg-[#24160F] rounded-[10px] overflow-hidden flex flex-col sm:flex-row items-stretch justify-between sm:h-[168px]">
+                <div className="w-full sm:w-[196px] sm:h-[168px] shrink-0 overflow-hidden">
+                  <img
+                    src="/assets/nfts/banner-right-ape.png"
+                    alt="Arte digital selecionada e muito mais"
+                    width={196}
+                    height={168}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-col items-end text-right justify-center flex-1 px-5 py-3.5">
+                  <h2 className="text-[#FAF5F0] font-bold text-xs sm:text-[13px] leading-snug mb-1.5 whitespace-nowrap">
+                    Arte digital selecionada
+                    <br />e muito mais
+                  </h2>
+                  <p className="text-[#B5A395] text-[10.5px] leading-[1.45] mb-3 max-w-[240px]">
+                    Explore novos artistas, coleções verificadas e obras digitais que definem a
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleExploreDigitalArt}
+                    className="inline-flex items-center gap-1.5 bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-[11px] px-4 py-1.5 rounded-[5px] transition-colors cursor-pointer"
+                  >
+                    <span>Explorar</span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -1599,19 +1746,19 @@ function HomeDiscoveryPage() {
           <section
             id="diario-cunhagem"
             aria-label="Diário da Cunhagem"
-            className="w-full flex flex-col items-center"
+            className="w-full flex flex-col items-center gap-10"
           >
-            <div className="text-center max-w-2xl mb-10">
-              <h2 className="text-[#FAF5F0] font-bold text-xl sm:text-2xl mb-2.5">
-                Diário da Cunhagem
-              </h2>
-              <p className="text-[#A8968A] text-xs sm:text-[13px]">
-                Histórias, guias e insights para colecionadores sobre o universo da propriedade
-                digital.
-              </p>
-            </div>
+            <div className="w-full flex flex-col items-center">
+              <div className="text-center max-w-2xl mb-6">
+                <h2 className="text-[#FAF5F0] font-bold text-xl sm:text-2xl mb-2">
+                  Diário da Cunhagem
+                </h2>
+                <p className="text-[#A8968A] text-xs sm:text-[13px]">
+                  Histórias, guias e insights para colecionadores sobre o universo da propriedade digital.
+                </p>
+              </div>
 
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {EDITORIAL_POSTS.map((post) => (
                 <article
                   key={post.id}
@@ -1651,6 +1798,7 @@ function HomeDiscoveryPage() {
                   </div>
                 </article>
               ))}
+              </div>
             </div>
           </section>
 
@@ -1663,88 +1811,94 @@ function HomeDiscoveryPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="article-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
           onClick={() => setSelectedArticle(null)}
         >
           <div
-            className="bg-[#1C120C] border border-[#3D281C] rounded-2xl max-w-3xl w-full overflow-hidden flex flex-col shadow-2xl relative"
+            className="bg-[#19100A] border border-[#3D281C] rounded-2xl max-w-2xl w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative h-28 sm:h-40 w-full overflow-hidden bg-[#140D0A] shrink-0">
+            <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-[#140D0A] shrink-0">
               <img
                 src={selectedArticle.imageUrl}
                 alt={selectedArticle.title}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1C120C] via-transparent to-black/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#19100A] via-[#19100A]/40 to-black/50" />
               <button
                 type="button"
                 aria-label="Fechar artigo"
                 onClick={() => setSelectedArticle(null)}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 hover:bg-[#D1823C] text-white hover:text-[#140D0A] flex items-center justify-center transition-colors cursor-pointer"
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/70 hover:bg-[#D1823C] text-white hover:text-[#140D0A] flex items-center justify-center border border-white/10 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
-              <div className="absolute bottom-3 left-4 sm:left-6 right-4 sm:right-6 flex items-center gap-2.5">
-                <span className="px-2 py-0.5 rounded bg-[#D1823C] text-[#140D0A] text-[10px] font-extrabold uppercase tracking-wider">
+              <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between">
+                <span className="px-3 py-1 rounded-full bg-[#D1823C] text-[#140D0A] text-[10px] font-black uppercase tracking-wider shadow">
                   {selectedArticle.category}
                 </span>
-                <span className="text-[11px] text-[#E8D7C8]">
+                <span className="text-[11px] text-[#E8D7C8] bg-black/50 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
                   {selectedArticle.date} • {selectedArticle.readTime}
                 </span>
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+            <div className="p-6 sm:p-7 overflow-y-auto space-y-5 flex-1 pr-5">
               <div>
                 <h2
                   id="article-modal-title"
-                  className="text-base sm:text-xl font-bold text-[#FAF5F0] leading-snug"
+                  className="text-xl sm:text-2xl font-bold text-[#FAF5F0] leading-snug tracking-tight"
                 >
                   {selectedArticle.title}
                 </h2>
-                <p className="text-[11px] sm:text-xs text-[#B5A395] mt-1 italic">
+                <p className="text-xs text-[#D1823C] font-medium leading-relaxed italic border-l-2 border-[#D1823C] pl-3 py-1 mt-3">
                   {selectedArticle.excerpt}
                 </p>
-                <div className="mt-2.5 pt-2 border-t border-[#2C1E16] flex items-center justify-between text-[11px] text-[#A8968A]">
-                  <div>
-                    Por <strong className="text-[#FAF5F0]">{selectedArticle.author.name}</strong> •{' '}
-                    <span>{selectedArticle.author.role}</span>
+                <div className="mt-4 pt-3 border-t border-[#2C1E16] flex items-center justify-between text-[11px] text-[#A8968A]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-[#D1823C] text-[#140D0A] font-bold text-[10px] flex items-center justify-center">
+                      {selectedArticle.author.name.charAt(0)}
+                    </div>
+                    <span>
+                      Por <strong className="text-[#FAF5F0]">{selectedArticle.author.name}</strong> •{' '}
+                      <span className="text-[#8C7A6B]">{selectedArticle.author.role}</span>
+                    </span>
                   </div>
+                  <span className="text-[#D1823C] font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Verificado
+                  </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3.5 text-xs text-[#C2B2A6]">
+              <div className="space-y-4 text-xs text-[#C5B4A6] leading-relaxed">
                 {selectedArticle.content.map((sec, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-[#170E09] border border-[#2C1E16] rounded-lg p-2.5 sm:p-3.5 space-y-1"
-                  >
-                    <h3 className="text-xs font-bold text-[#FAF5F0] flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-[#D1823C] shrink-0" />
+                  <div key={idx} className="space-y-2 bg-[#211610]/50 p-4 rounded-xl border border-[#2E1E14]">
+                    <h3 className="text-[13px] font-bold text-[#FAF5F0] flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-[#D1823C] shrink-0" />
                       <span>{sec.heading}</span>
                     </h3>
-                    <p className="text-[11px] leading-snug text-[#B5A395]">{sec.text}</p>
+                    <p className="text-[12px] leading-relaxed text-[#B5A395] pl-6">{sec.text}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-[#2C1E16] bg-[#170E09] flex items-center justify-between gap-3 shrink-0">
+            <div className="px-6 py-4 border-t border-[#2C1E16] bg-[#140D0A] flex items-center justify-between gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   toast.success('Link do artigo copiado para a área de transferência!');
                 }}
-                className="text-[11px] text-[#C2B2A6] hover:text-[#D1823C] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs text-[#C2B2A6] hover:text-[#D1823C] transition-colors cursor-pointer"
               >
-                Copiar link do artigo
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Copiar link</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedArticle(null)}
-                className="bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-xs px-5 py-2 rounded-md transition-colors cursor-pointer"
+                className="bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-xs px-6 py-2 rounded-lg transition-colors cursor-pointer shadow-md"
               >
                 Concluir leitura
               </button>
