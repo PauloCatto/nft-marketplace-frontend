@@ -1,7 +1,7 @@
 import type { User } from '../../api/contracts';
 
 export interface UserRecord extends User {
-  // Purely simulated password comparison string, documented as non-production mock
+  
   simulatedPasswordHash: string;
 }
 
@@ -23,5 +23,14 @@ export const initialUsersFixture: UserRecord[] = [
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
     simulatedPasswordHash: 'simulated_hash_Password123!',
     createdAt: '2026-02-01T14:30:00.000Z',
+  },
+  {
+    id: 'user-kurio',
+    name: 'Kurio Collector',
+    email: 'contato@email.com',
+    bio: 'Colecionador verificado na Kurio.',
+    avatarUrl: '/assets/nfts/emerald-ape.png',
+    simulatedPasswordHash: 'simulated_hash_Password123!',
+    createdAt: '2026-03-01T12:00:00.000Z',
   },
 ];

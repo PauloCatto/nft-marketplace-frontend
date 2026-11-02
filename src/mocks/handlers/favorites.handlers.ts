@@ -14,7 +14,7 @@ function resolveFavoritesUser(request: Request): { userId: string; errorResponse
 }
 
 export const favoritesHandlers = [
-  // GET */api/favorites
+  
   http.get('*/api/favorites', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -28,7 +28,7 @@ export const favoritesHandlers = [
     return HttpResponse.json({ items, nftIds });
   }),
 
-  // POST */api/favorites/:id
+  
   http.post('*/api/favorites/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -36,7 +36,7 @@ export const favoritesHandlers = [
     const { userId, errorResponse } = resolveFavoritesUser(request);
     if (errorResponse) return errorResponse;
 
-    // Simulação determinística de erro transitório para comprovar Rollback da Mutação Otimista
+    
     if (scenario.failFavorites) {
       return HttpResponse.json(
         { error: { code: 'TRANSIENT_FAILURE', message: 'Falha transitória ao favoritar NFT. Tente novamente.' } },
@@ -58,7 +58,7 @@ export const favoritesHandlers = [
     return HttpResponse.json({ success: true, nftIds }, { status: 201 });
   }),
 
-  // DELETE */api/favorites/:id
+  
   http.delete('*/api/favorites/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -66,7 +66,7 @@ export const favoritesHandlers = [
     const { userId, errorResponse } = resolveFavoritesUser(request);
     if (errorResponse) return errorResponse;
 
-    // Simulação determinística de erro transitório para comprovar Rollback da Mutação Otimista
+    
     if (scenario.failFavorites) {
       return HttpResponse.json(
         { error: { code: 'TRANSIENT_FAILURE', message: 'Falha transitória ao remover favorito. Rollback ativado.' } },

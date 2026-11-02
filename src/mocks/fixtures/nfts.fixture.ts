@@ -347,9 +347,9 @@ export const initialNFTsFixture: NFT[] = [
     updatedAt: '2026-03-22T10:00:00.000Z',
     history: [],
   },
-  // ==========================================
-  // PAGE 2 (ITEMS 10 - 18)
-  // ==========================================
+  
+  
+  
   {
     id: 'nft-10',
     version: 1,
@@ -648,9 +648,9 @@ export const initialNFTsFixture: NFT[] = [
     updatedAt: '2026-03-13T07:00:00.000Z',
     history: [],
   },
-  // ==========================================
-  // PAGES 3 & 4 (ITEMS 19 - 36)
-  // ==========================================
+  
+  
+  
   ...Array.from({ length: 18 }, (_, idx): NFT => {
     const num = idx + 19;
     const templates = [

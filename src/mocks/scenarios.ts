@@ -14,12 +14,12 @@ export interface ScenarioConfig {
 export const defaultScenarios: ScenarioConfig = {
   latencyMs: 50,
   emptyCatalog: false,
-  failFavorites: false, // Dispara erro 500 para comprovar rollback de mutação otimista
-  sessionExpired: false, // Dispara erro 401 para comprovar expiração de sessão
-  orderTimeout: false, // Dispara erro 504 para comprovar idempotência no retry
-  paymentFailed: false, // Marca status do pedido como REJECTED
-  priceChangedInCart: false, // Dispara erro 409 com alteração de preço
-  editionSoldOut: false, // Dispara erro 409 com edição esgotada
+  failFavorites: false, 
+  sessionExpired: false, 
+  orderTimeout: false, 
+  paymentFailed: false, 
+  priceChangedInCart: false, 
+  editionSoldOut: false, 
   invalidCredentialsError: false,
   simulateHttp500OnCatalog: false,
 };
@@ -51,7 +51,7 @@ class ScenarioManager {
       try {
         window.localStorage.setItem(SCENARIOS_STORAGE_KEY, JSON.stringify(this.config));
       } catch {
-        // Ignora erros de quota de storage
+        
       }
     }
   }

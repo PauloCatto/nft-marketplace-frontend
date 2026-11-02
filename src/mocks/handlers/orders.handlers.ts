@@ -20,7 +20,7 @@ function resolveOrderUser(request: Request): { userId: string; errorResponse?: R
 }
 
 export const orderHandlers = [
-  // POST */api/orders
+  
   http.post('*/api/orders', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -47,7 +47,7 @@ export const orderHandlers = [
 
     const payloadHash = hashPayload(body);
 
-    // 1. Verifica idempotência primeiro (para que replays da mesma chave não falhem por estoque consumido na 1ª tentativa)
+    
     const existingIdempotent = db.findIdempotentOrder(idempotencyKey);
     if (existingIdempotent) {
       if (existingIdempotent.payloadHash !== payloadHash) {
@@ -64,7 +64,7 @@ export const orderHandlers = [
       return HttpResponse.json(existingIdempotent.order, { status: 200 });
     }
 
-    // 2. Recupera a cotação original (preservando quoteId e cupom aplicado)
+    
     const savedQuote = db.getQuoteById(body.quoteId);
     if (!savedQuote) {
       return HttpResponse.json(
@@ -80,7 +80,7 @@ export const orderHandlers = [
       );
     }
 
-    // 3. Cenários determinísticos de conflito (409)
+    
     if (scenario.editionSoldOut) {
       return HttpResponse.json(
         {
@@ -105,7 +105,7 @@ export const orderHandlers = [
       );
     }
 
-    // 4. Valida disponibilidade e preço atual de cada item da cotação no banco
+    
     for (const item of savedQuote.items) {
       const currentNft = db.findNFTById(item.nftId);
       if (!currentNft || !currentNft.isAvailable || currentNft.availableEditions < item.quantity) {
@@ -168,7 +168,7 @@ export const orderHandlers = [
     return HttpResponse.json(result.order, { status });
   }),
 
-  // GET */api/orders/:id
+  
   http.get('*/api/orders/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -189,7 +189,7 @@ export const orderHandlers = [
     return HttpResponse.json(order);
   }),
 
-  // GET */api/orders/:id/receipt
+  
   http.get('*/api/orders/:id/receipt', async ({ request, params }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);

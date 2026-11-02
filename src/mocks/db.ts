@@ -5,18 +5,18 @@ import { initialNFTsFixture } from './fixtures/nfts.fixture';
 import { initialCouponsFixture, type Coupon } from './fixtures/coupons.fixture';
 import { initialWalletsFixture } from './fixtures/wallets.fixture';
 
-const DB_STORAGE_KEY = 'kurio_nft_mock_db_v11';
+const DB_STORAGE_KEY = 'kurio_nft_mock_db_v12';
 
 export interface DatabaseState {
   users: UserRecord[];
   nfts: NFT[];
-  favorites: Record<string, string[]>; // userId -> nftId[]
-  carts: Record<string, CartItem[]>; // userId -> CartItem[]
+  favorites: Record<string, string[]>; 
+  carts: Record<string, CartItem[]>; 
   guestCart: CartItem[];
-  quotes: Record<string, Quotation>; // quoteId -> Quotation
-  orders: Record<string, Order[]>; // userId -> Order[]
+  quotes: Record<string, Quotation>; 
+  orders: Record<string, Order[]>; 
   idempotencyStore: Record<string, { orderId: string; payloadHash: string; order: Order }>;
-  wallets: Record<string, Wallet[]>; // userId -> Wallet[]
+  wallets: Record<string, Wallet[]>; 
   coupons: Coupon[];
 }
 
@@ -85,7 +85,7 @@ class MockDatabase {
           return JSON.parse(stored);
         }
       } catch {
-        // Fallback em caso de erro no parse
+        
       }
     }
     return getInitialState();
@@ -96,7 +96,7 @@ class MockDatabase {
       try {
         window.localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(this.state));
       } catch {
-        // Ignora erros de storage
+        
       }
     }
   }
@@ -109,7 +109,7 @@ class MockDatabase {
     this.save();
   }
 
-  // USERS & AUTH
+  
   public findUserByEmail(email: string): UserRecord | undefined {
     return this.state.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
   }
@@ -155,7 +155,7 @@ class MockDatabase {
     return true;
   }
 
-  // NFTS
+  
   public getNFTs(): NFT[] {
     return [...this.state.nfts];
   }
@@ -177,7 +177,7 @@ class MockDatabase {
     return nft;
   }
 
-  // FAVORITES (ISOLATED PER USER)
+  
   public getFavorites(userId: string): NFT[] {
     const ids = this.state.favorites[userId] || [];
     return this.state.nfts.filter((nft) => ids.includes(nft.id));
@@ -209,7 +209,7 @@ class MockDatabase {
     return this.state.favorites[userId];
   }
 
-  // CART & MERGE LOGIC
+  
   public getCart(userId?: string): CartItem[] {
     if (!userId) return [...this.state.guestCart];
     if (!this.state.carts[userId]) this.state.carts[userId] = [];
@@ -305,7 +305,7 @@ class MockDatabase {
     return { mergedCart: userCart, removedUnavailable };
   }
 
-  // QUOTATION ENGINE (COM DECIMAL.JS)
+  
   public calculateQuote(userId: string | undefined, couponCode?: string): { quote: Quotation; error?: string } {
     const cart = this.getCart(userId);
     if (cart.length === 0) {
@@ -394,7 +394,7 @@ class MockDatabase {
     return this.state.quotes[quoteId];
   }
 
-  // ORDERS WITH IDEMPOTENCY
+  
   public findIdempotentOrder(idempotencyKey: string): { orderId: string; payloadHash: string; order: Order } | undefined {
     return this.state.idempotencyStore[idempotencyKey];
   }
@@ -411,11 +411,11 @@ class MockDatabase {
     const existing = this.state.idempotencyStore[params.idempotencyKey];
 
     if (existing) {
-      // Se a mesma chave foi enviada com payload diferente: CONFLITO 409
+      
       if (existing.payloadHash !== params.payloadHash) {
         return { order: existing.order, isReplay: true, conflict: true };
       }
-      // Se payload for idêntico: recupera o mesmo pedido idempotentemente
+      
       return { order: existing.order, isReplay: true, conflict: false };
     }
 
@@ -515,7 +515,7 @@ class MockDatabase {
     return order;
   }
 
-  // WALLETS
+  
   public getWallets(userId: string): Wallet[] {
     return this.state.wallets[userId] || [];
   }

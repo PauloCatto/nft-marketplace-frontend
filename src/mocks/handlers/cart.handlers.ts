@@ -14,7 +14,7 @@ function resolveCartUser(request: Request): { userId: string | undefined; errorR
 }
 
 export const cartHandlers = [
-  // GET */api/cart
+  
   http.get('*/api/cart', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -28,7 +28,7 @@ export const cartHandlers = [
     return HttpResponse.json({ items, itemCount });
   }),
 
-  // POST */api/cart/items
+  
   http.post('*/api/cart/items', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -57,7 +57,7 @@ export const cartHandlers = [
     return HttpResponse.json({ items: cart, itemCount });
   }),
 
-  // PATCH */api/cart/items/:id
+  
   http.patch('*/api/cart/items/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -80,7 +80,7 @@ export const cartHandlers = [
     return HttpResponse.json({ items: cart, itemCount });
   }),
 
-  // DELETE */api/cart/items/:id
+  
   http.delete('*/api/cart/items/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -95,7 +95,7 @@ export const cartHandlers = [
     return HttpResponse.json({ items: cart, itemCount });
   }),
 
-  // POST */api/cart/merge
+  
   http.post('*/api/cart/merge', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -114,7 +114,7 @@ export const cartHandlers = [
     });
   }),
 
-  // POST */api/cart/quote
+  
   http.post('*/api/cart/quote', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -143,7 +143,7 @@ export const cartHandlers = [
       const body = (await request.json()) as { couponCode?: string };
       couponCode = body?.couponCode;
     } catch {
-      // Body vazio é aceitável
+      
     }
 
     const { quote, error } = db.calculateQuote(userId, couponCode);

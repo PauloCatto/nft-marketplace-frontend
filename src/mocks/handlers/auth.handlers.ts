@@ -47,7 +47,7 @@ export function requireAuth(request: Request): { userId: string; errorResponse?:
 }
 
 export const authHandlers = [
-  // POST */api/auth/login
+  
   http.post('*/api/auth/login', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -69,7 +69,7 @@ export const authHandlers = [
     }
 
     const user = db.findUserByEmail(body.email);
-    // Verificação de senha simulada (documentada como mock)
+    
     if (!user || user.simulatedPasswordHash !== `simulated_hash_${body.password}`) {
       return HttpResponse.json(
         { error: { code: 'INVALID_CREDENTIALS', message: 'Email ou senha incorretos' } },
@@ -94,7 +94,7 @@ export const authHandlers = [
     });
   }),
 
-  // POST */api/auth/register
+  
   http.post('*/api/auth/register', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -142,7 +142,7 @@ export const authHandlers = [
     );
   }),
 
-  // GET */api/auth/me
+  
   http.get('*/api/auth/me', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
@@ -182,7 +182,7 @@ export const authHandlers = [
     });
   }),
 
-  // POST */api/auth/logout
+  
   http.post('*/api/auth/logout', async () => {
     return HttpResponse.json({ success: true });
   }),
