@@ -22,7 +22,7 @@ const marketSearchSchema = z.object({
 
 export type MarketSearchParams = Partial<z.infer<typeof marketSearchSchema>>;
 
-export const Route = createFileRoute('/mercado')({
+export const Route = createFileRoute('/market')({
   validateSearch: (search: Record<string, unknown>): MarketSearchParams => {
     const parsed = marketSearchSchema.safeParse(search);
     if (parsed.success) {
@@ -67,7 +67,7 @@ const COLLECTOR_REVIEWS = [
   },
 ];
 
-const MAIS_DESTA_COLECAO_PAGES = [
+const COLLECTION_PAGES = [
   [
     {
       id: 'nft-4',
@@ -179,11 +179,11 @@ function MarketDetailPage() {
   const [isZoomModalOpen, setIsZoomModalOpen] = useState<boolean>(false);
 
   const nextCollectionPage = () => {
-    setCarouselDot((prev) => (prev + 1) % MAIS_DESTA_COLECAO_PAGES.length);
+    setCarouselDot((prev) => (prev + 1) % COLLECTION_PAGES.length);
   };
 
   const prevCollectionPage = () => {
-    setCarouselDot((prev) => (prev - 1 + MAIS_DESTA_COLECAO_PAGES.length) % MAIS_DESTA_COLECAO_PAGES.length);
+    setCarouselDot((prev) => (prev - 1 + COLLECTION_PAGES.length) % COLLECTION_PAGES.length);
   };
 
   useEffect(() => {
@@ -307,10 +307,10 @@ function MarketDetailPage() {
       toast.success(
         `${quantity}x ${nft?.name || 'NFT'} (${selectedEdition}) adicionado ao carrinho!`
       );
-      navigate({ to: '/carrinho' });
+      navigate({ to: '/cart' });
     },
     onError: () => {
-      navigate({ to: '/carrinho' });
+      navigate({ to: '/cart' });
     },
   });
 
@@ -338,7 +338,7 @@ function MarketDetailPage() {
     return '#0042';
   };
 
-  const relatedNfts = MAIS_DESTA_COLECAO_PAGES[carouselDot] ?? MAIS_DESTA_COLECAO_PAGES[0];
+  const relatedNfts = COLLECTION_PAGES[carouselDot] ?? COLLECTION_PAGES[0];
   const mainArtwork = getMainArtworkUrl(nft);
   const maxAvailable = Math.max(1, nft?.availableEditions || 10);
 
@@ -956,7 +956,7 @@ function MarketDetailPage() {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                {MAIS_DESTA_COLECAO_PAGES.map((_, dotIdx) => {
+                {COLLECTION_PAGES.map((_, dotIdx) => {
                   const isCurrent = carouselDot === dotIdx;
                   return (
                     <button

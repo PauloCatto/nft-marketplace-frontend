@@ -20,17 +20,17 @@ import { Header } from '../components/layout/Header';
 import { ProfileSidebar } from '../components/layout/ProfileSidebar';
 
 const profileSearchSchema = z.object({
-  tab: z.enum(['dados', 'carteiras']).optional(),
+  tab: z.enum(['details', 'wallets']).optional(),
 });
 
 export type ProfileSearchParams = Partial<z.infer<typeof profileSearchSchema>>;
 
-export const Route = createFileRoute('/perfil')({
+export const Route = createFileRoute('/profile')({
   beforeLoad: () => {
     if (!isAuthenticated()) {
       triggerRequireAuth({
         message: 'Faça login na sua conta para acessar o Perfil do colecionador e Carteiras.',
-        redirectTo: '/perfil',
+        redirectTo: '/profile',
       });
       throw redirect({ to: '/' });
     }
@@ -100,7 +100,7 @@ function CollectorProfilePage() {
   const queryClient = useQueryClient();
   const { tab: urlTab } = Route.useSearch();
 
-  const activeTab = urlTab || 'dados';
+  const activeTab = urlTab || 'details';
 
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
@@ -409,7 +409,7 @@ function CollectorProfilePage() {
           <ProfileSidebar activeSection={activeTab} />
 
           <main className="flex-1 w-full max-w-[660px]">
-            {activeTab === 'dados' ? (
+            {activeTab === 'details' ? (
               <form onSubmit={handleSaveProfileSubmit} className="flex flex-col">
                 <h2 className="text-[#FAF5F0] font-bold text-xs mb-5">
                   Perfil do colecionador

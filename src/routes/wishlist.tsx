@@ -7,12 +7,12 @@ import type { FavoritesResponse } from '../api/contracts';
 import { Header } from '../components/layout/Header';
 import { ProfileSidebar } from '../components/layout/ProfileSidebar';
 
-export const Route = createFileRoute('/lista-interesse')({
+export const Route = createFileRoute('/wishlist')({
   beforeLoad: () => {
     if (!isAuthenticated()) {
       triggerRequireAuth({
         message: 'Faça login na sua conta para acessar sua Lista de interesse.',
-        redirectTo: '/lista-interesse',
+        redirectTo: '/wishlist',
       });
       throw redirect({ to: '/' });
     }
@@ -81,7 +81,7 @@ function WishlistPage() {
         <Header />
 
         <div className="w-full mt-7 flex flex-col lg:flex-row items-start gap-8 lg:gap-10">
-          <ProfileSidebar activeSection="lista-interesse" />
+          <ProfileSidebar activeSection="wishlist" />
 
           <main className="flex-1 w-full max-w-[660px]">
             <div className="flex flex-col gap-4">
@@ -140,11 +140,11 @@ function WishlistPage() {
                         <div
                           role="button"
                           tabIndex={0}
-                          onClick={() => navigate({ to: '/mercado', search: { id: favNft.id } })}
+                          onClick={() => navigate({ to: '/market', search: { id: favNft.id } })}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
-                              navigate({ to: '/mercado', search: { id: favNft.id } });
+                              navigate({ to: '/market', search: { id: favNft.id } });
                             }
                           }}
                           className="w-full aspect-[150/174] rounded-[12px] overflow-hidden cursor-pointer"

@@ -20,12 +20,12 @@ import { JUNGLE_WS_URL } from '../mocks/socket/socketHandler';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 
-export const Route = createFileRoute('/pagamento')({
+export const Route = createFileRoute('/checkout')({
   beforeLoad: () => {
     if (!isAuthenticated()) {
       triggerRequireAuth({
         message: 'Você precisa estar logado para finalizar o pagamento.',
-        redirectTo: '/pagamento',
+        redirectTo: '/checkout',
       });
       throw redirect({ to: '/' });
     }
@@ -341,7 +341,7 @@ function CheckoutPaymentPage() {
             <button
               type="button"
               aria-label="Voltar para o carrinho"
-              onClick={() => navigate({ to: '/carrinho' })}
+              onClick={() => navigate({ to: '/cart' })}
               className="absolute left-0 w-9 h-9 rounded-full bg-[#24160F] border border-[#3B261B] flex items-center justify-center text-[#D1823C] cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -532,7 +532,7 @@ function CheckoutPaymentPage() {
             /
           </span>
           <Link
-            to="/mercado"
+            to="/market"
             className="text-[#FAF5F0] font-bold hover:text-[#D1823C] transition-colors"
           >
             Mercado

@@ -6,12 +6,12 @@ import { isAuthenticated, triggerRequireAuth } from '../api/client';
 import { Header } from '../components/layout/Header';
 import { ProfileSidebar } from '../components/layout/ProfileSidebar';
 
-export const Route = createFileRoute('/ofertas')({
+export const Route = createFileRoute('/offers')({
   beforeLoad: () => {
     if (!isAuthenticated()) {
       triggerRequireAuth({
         message: 'Faça login na sua conta para gerenciar suas Ofertas.',
-        redirectTo: '/ofertas',
+        redirectTo: '/offers',
       });
       throw redirect({ to: '/' });
     }
@@ -193,7 +193,7 @@ function OffersPage() {
         <Header />
 
         <div className="w-full mt-7 flex flex-col lg:flex-row items-start gap-8 lg:gap-10">
-          <ProfileSidebar activeSection="ofertas" />
+          <ProfileSidebar activeSection="offers" />
 
           <main className="flex-1 w-full">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-3 border-b border-[#2E1E15]">
@@ -284,7 +284,7 @@ function OffersPage() {
                     <img
                       src={offer.imageUrl}
                       alt={offer.nftName}
-                      onClick={() => navigate({ to: '/mercado', search: { id: offer.nftId } })}
+                      onClick={() => navigate({ to: '/market', search: { id: offer.nftId } })}
                       className="w-14 h-14 rounded-[8px] object-cover border border-[#3B2619] shrink-0 cursor-pointer"
                     />
                     <div className="min-w-0">
@@ -302,7 +302,7 @@ function OffersPage() {
 
                       <button
                         type="button"
-                        onClick={() => navigate({ to: '/mercado', search: { id: offer.nftId } })}
+                        onClick={() => navigate({ to: '/market', search: { id: offer.nftId } })}
                         className="text-xs sm:text-[13px] font-bold text-[#FAF5F0] hover:text-[#D1823C] flex items-center gap-1 mt-1 transition-colors cursor-pointer"
                       >
                         <span>{offer.nftName}</span>

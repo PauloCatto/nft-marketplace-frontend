@@ -122,7 +122,7 @@ function RootComponent() {
           } else if (pending?.redirectTo) {
             navigate({ to: pending.redirectTo });
           } else {
-            navigate({ to: '/perfil' });
+            navigate({ to: '/profile' });
           }
         }}
       />

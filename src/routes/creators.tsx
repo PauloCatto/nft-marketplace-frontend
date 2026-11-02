@@ -3,7 +3,7 @@ import { CheckCircle2, Sparkles } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 
-export const Route = createFileRoute('/criadores')({
+export const Route = createFileRoute('/creators')({
   component: CreatorsPage,
 });
 
@@ -173,7 +173,7 @@ function CreatorsPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => navigate({ to: '/mercado', search: { id: creator.collectionId } })}
+                    onClick={() => navigate({ to: '/market', search: { id: creator.collectionId } })}
                     className="shrink-0 bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-[11px] px-4 py-1.5 rounded-md transition-colors cursor-pointer"
                   >
                     Ver coleção

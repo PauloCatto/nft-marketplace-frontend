@@ -4,7 +4,7 @@ import { Award, ChevronDown, Coins, FileCode2, ShieldCheck, Wallet } from 'lucid
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 
-export const Route = createFileRoute('/aprenda')({
+export const Route = createFileRoute('/learn')({
   component: LearnPage,
 });
 

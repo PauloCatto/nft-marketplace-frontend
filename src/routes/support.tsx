@@ -14,12 +14,12 @@ import { isAuthenticated, triggerRequireAuth } from '../api/client';
 import { Header } from '../components/layout/Header';
 import { ProfileSidebar } from '../components/layout/ProfileSidebar';
 
-export const Route = createFileRoute('/suporte')({
+export const Route = createFileRoute('/support')({
   beforeLoad: () => {
     if (!isAuthenticated()) {
       triggerRequireAuth({
         message: 'Faça login na sua conta para acessar o Suporte ao colecionador.',
-        redirectTo: '/suporte',
+        redirectTo: '/support',
       });
       throw redirect({ to: '/' });
     }
@@ -103,7 +103,7 @@ function SupportPage() {
         <Header />
 
         <div className="w-full mt-7 flex flex-col lg:flex-row items-start gap-8 lg:gap-10">
-          <ProfileSidebar activeSection="suporte" />
+          <ProfileSidebar activeSection="support" />
 
           <main className="flex-1 w-full space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[#2E1E15]">
