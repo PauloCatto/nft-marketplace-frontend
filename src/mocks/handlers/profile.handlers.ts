@@ -1,19 +1,28 @@
 import { http, HttpResponse, delay } from 'msw';
 import { db } from '../db';
 import { scenarios } from '../scenarios';
-import { requireAuth } from './auth.handlers';
+import { getUserIdFromRequest, requireAuth } from './auth.handlers';
+
+function resolveProfileUser(request: Request): { userId: string; errorResponse?: Response } {
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const auth = requireAuth(request);
+    if (auth.errorResponse) return { userId: 'user-kurio', errorResponse: auth.errorResponse };
+    return { userId: auth.userId };
+  }
+  return { userId: getUserIdFromRequest(request) || 'user-kurio' };
+}
 
 export const profileHandlers = [
-  // GET */api/profile
+  
   http.get('*/api/profile', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveProfileUser(request);
+    if (errorResponse) return errorResponse;
 
-    const user = db.findUserById(userId);
+    const user = db.findUserById(userId) || db.findUserById('user-alex');
 
     if (!user) {
       return HttpResponse.json(
@@ -32,18 +41,18 @@ export const profileHandlers = [
     });
   }),
 
-  // PUT */api/profile
+  
   http.put('*/api/profile', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveProfileUser(request);
+    if (errorResponse) return errorResponse;
 
     const body = (await request.json()) as { name?: string; bio?: string; avatarUrl?: string };
 
-    const updated = db.updateUser(userId, body);
+    const targetId = db.findUserById(userId) ? userId : 'user-alex';
+    const updated = db.updateUser(targetId, body);
     if (!updated) {
       return HttpResponse.json(
         { error: { code: 'NOT_FOUND', message: 'Usuário não encontrado' } },
@@ -61,16 +70,16 @@ export const profileHandlers = [
     });
   }),
 
-  // PUT */api/profile/password
+  
   http.put('*/api/profile/password', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveProfileUser(request);
+    if (errorResponse) return errorResponse;
 
-    const user = db.findUserById(userId);
+    const targetId = db.findUserById(userId) ? userId : 'user-alex';
+    const user = db.findUserById(targetId);
     const body = (await request.json()) as { currentPassword?: string; newPassword?: string };
 
     if (!user || user.simulatedPasswordHash !== `simulated_hash_${body.currentPassword}`) {
@@ -87,7 +96,7 @@ export const profileHandlers = [
       );
     }
 
-    db.updatePassword(userId, `simulated_hash_${body.newPassword}`);
+    db.updatePassword(targetId, `simulated_hash_${body.newPassword}`);
     return HttpResponse.json({ success: true, message: 'Senha atualizada com sucesso.' });
   }),
 ];

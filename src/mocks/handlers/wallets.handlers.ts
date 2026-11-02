@@ -1,32 +1,40 @@
 import { http, HttpResponse, delay } from 'msw';
 import { db } from '../db';
 import { scenarios } from '../scenarios';
-import { requireAuth } from './auth.handlers';
+import { getUserIdFromRequest, requireAuth } from './auth.handlers';
 import type { CreateWalletRequest, UpdateWalletRequest } from '../../api/contracts';
 
+function resolveWalletUser(request: Request): { userId: string; errorResponse?: Response } {
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const auth = requireAuth(request);
+    if (auth.errorResponse) return { userId: 'user-kurio', errorResponse: auth.errorResponse };
+    return { userId: auth.userId };
+  }
+  return { userId: getUserIdFromRequest(request) || 'user-kurio' };
+}
+
 export const walletHandlers = [
-  // GET */api/wallets
+  
   http.get('*/api/wallets', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveWalletUser(request);
+    if (errorResponse) return errorResponse;
 
     const wallets = db.getWallets(userId);
 
     return HttpResponse.json({ items: wallets });
   }),
 
-  // POST */api/wallets
+  
   http.post('*/api/wallets', async ({ request }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveWalletUser(request);
+    if (errorResponse) return errorResponse;
 
     const body = (await request.json()) as CreateWalletRequest;
 
@@ -41,14 +49,13 @@ export const walletHandlers = [
     return HttpResponse.json(newWallet, { status: 201 });
   }),
 
-  // PATCH */api/wallets/:id
+  
   http.patch('*/api/wallets/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveWalletUser(request);
+    if (errorResponse) return errorResponse;
 
     const walletId = String(params.id);
     const body = (await request.json()) as UpdateWalletRequest;
@@ -64,14 +71,13 @@ export const walletHandlers = [
     return HttpResponse.json(updated);
   }),
 
-  // DELETE */api/wallets/:id
+  
   http.delete('*/api/wallets/:id', async ({ request, params }) => {
     const scenario = scenarios.get();
     if (scenario.latencyMs > 0) await delay(scenario.latencyMs);
 
-    const auth = requireAuth(request);
-    if (auth.errorResponse) return auth.errorResponse;
-    const { userId } = auth;
+    const { userId, errorResponse } = resolveWalletUser(request);
+    if (errorResponse) return errorResponse;
 
     const walletId = String(params.id);
 

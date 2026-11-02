@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js'
 
-// Configure global precision to 28 digits with ROUND_HALF_UP
+
 Decimal.set({ precision: 28, rounding: Decimal.ROUND_HALF_UP })
 
 export type EthAmount = string
