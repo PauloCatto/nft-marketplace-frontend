@@ -1,5 +1,7 @@
 # Kurio — NFT Marketplace (Frontend Challenge)
 
+> **Deploy em Produção (Live Demo):** [https://jungle-nfts.vercel.app](https://jungle-nfts.vercel.app)
+
 Aplicação completa de **Marketplace de NFTs (Kurio)** desenvolvida em **React 19** e **TypeScript**, seguindo fielmente a identidade visual e os frames Desktop e Mobile do [Figma do Desafio](https://www.figma.com/design/Ff0SksUi7UFtPWUO8kyNtw/Frontend-Challenge?node-id=0-1), com camada de backend simulada via **MSW (Mock Service Worker)**, eventos em tempo real via **Socket.IO**, roteamento fortemente tipado com **TanStack Router** e gerenciamento de estado assíncrono com **TanStack Query**.
 
 ---
