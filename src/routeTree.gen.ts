@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as MercadoRouteImport } from './routes/mercado'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
+import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as TestSocketRouteImport } from './routes/test-socket'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const PagamentoRoute = PagamentoRouteImport.update({
   path: '/pagamento',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TestSocketRoute = TestSocketRouteImport.update({
   id: '/test-socket',
   path: '/test-socket',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/carrinho': typeof CarrinhoRoute
   '/mercado': typeof MercadoRoute
   '/pagamento': typeof PagamentoRoute
+  '/perfil': typeof PerfilRoute
   '/test-socket': typeof TestSocketRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/carrinho': typeof CarrinhoRoute
   '/mercado': typeof MercadoRoute
   '/pagamento': typeof PagamentoRoute
+  '/perfil': typeof PerfilRoute
   '/test-socket': typeof TestSocketRoute
 }
 export interface FileRoutesById {
@@ -61,15 +69,23 @@ export interface FileRoutesById {
   '/carrinho': typeof CarrinhoRoute
   '/mercado': typeof MercadoRoute
   '/pagamento': typeof PagamentoRoute
+  '/perfil': typeof PerfilRoute
   '/test-socket': typeof TestSocketRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/carrinho' | '/mercado' | '/pagamento' | '/test-socket'
+  fullPaths:
+    '/' | '/carrinho' | '/mercado' | '/pagamento' | '/perfil' | '/test-socket'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/carrinho' | '/mercado' | '/pagamento' | '/test-socket'
+  to: '/' | '/carrinho' | '/mercado' | '/pagamento' | '/perfil' | '/test-socket'
   id:
-    '__root__' | '/' | '/carrinho' | '/mercado' | '/pagamento' | '/test-socket'
+    | '__root__'
+    | '/'
+    | '/carrinho'
+    | '/mercado'
+    | '/pagamento'
+    | '/perfil'
+    | '/test-socket'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +93,7 @@ export interface RootRouteChildren {
   CarrinhoRoute: typeof CarrinhoRoute
   MercadoRoute: typeof MercadoRoute
   PagamentoRoute: typeof PagamentoRoute
+  PerfilRoute: typeof PerfilRoute
   TestSocketRoute: typeof TestSocketRoute
 }
 
@@ -110,6 +127,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PagamentoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/test-socket': {
       id: '/test-socket'
       path: '/test-socket'
@@ -125,6 +149,7 @@ const rootRouteChildren: RootRouteChildren = {
   CarrinhoRoute: CarrinhoRoute,
   MercadoRoute: MercadoRoute,
   PagamentoRoute: PagamentoRoute,
+  PerfilRoute: PerfilRoute,
   TestSocketRoute: TestSocketRoute,
 }
 export const routeTree = rootRouteImport

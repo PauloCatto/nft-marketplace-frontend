@@ -19,7 +19,7 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Interceptor de Requisição: Injeta token de autenticação se presente
+
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -33,7 +33,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor de Resposta: Tratamento de sessão e erros padronizados
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiErrorResponse>) => {

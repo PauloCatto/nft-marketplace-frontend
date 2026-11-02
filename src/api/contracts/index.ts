@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import type { EthAmount } from '../../types';
 
-// ==========================================
-// AUTH & SESSION CONTRACTS
-// ==========================================
+
+
+
 
 export const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -35,9 +35,9 @@ export interface AuthSessionResponse {
   expiresAt: string;
 }
 
-// ==========================================
-// NFT & CATALOG CONTRACTS
-// ==========================================
+
+
+
 
 export interface NFTTrait {
   trait_type: string;
@@ -128,18 +128,18 @@ export interface NFTListResponse {
   totalPages: number;
 }
 
-// ==========================================
-// FAVORITES CONTRACTS
-// ==========================================
+
+
+
 
 export interface FavoritesResponse {
   items: NFT[];
   nftIds: string[];
 }
 
-// ==========================================
-// CART & QUOTE CONTRACTS
-// ==========================================
+
+
+
 
 export interface CartItem {
   nftId: string;
@@ -190,9 +190,9 @@ export const quoteRequestSchema = z.object({
 
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
 
-// ==========================================
-// ORDER CONTRACTS (IDEMPOTENCY)
-// ==========================================
+
+
+
 
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED';
 
@@ -234,9 +234,9 @@ export interface Order {
   receipt?: Receipt;
 }
 
-// ==========================================
-// PROFILE & WALLET CONTRACTS
-// ==========================================
+
+
+
 
 export const updateProfileSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -279,9 +279,9 @@ export const updateWalletSchema = z.object({
 
 export type UpdateWalletRequest = z.infer<typeof updateWalletSchema>;
 
-// ==========================================
-// REAL-TIME SOCKET EVENTS CONTRACTS
-// ==========================================
+
+
+
 
 export interface NftUpdatedEvent {
   nftId: string;

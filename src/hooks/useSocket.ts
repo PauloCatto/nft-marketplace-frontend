@@ -8,7 +8,7 @@ let socketInstance: Socket | null = null;
 export function getSocket(): Socket {
   if (!socketInstance) {
     socketInstance = io(JUNGLE_WS_URL, {
-      transports: ['websocket'], // Obrigatório para interceptação direta via WebSocket do MSW
+      transports: ['websocket'], 
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 5,
@@ -23,7 +23,7 @@ export function useSocket() {
   const [lastError, setLastError] = useState<string | null>(null);
   const socketRef = useRef<Socket>(getSocket());
 
-  // Mapa de controle de versão dos recursos para descartar eventos desatualizados
+  
   const versionsRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function useSocket() {
     const socket = socketRef.current;
 
     const handler = (event: NftUpdatedEvent) => {
-      // Regra de resiliência: Descartar eventos duplicados ou antigos
+      
       const lastVersion = versionsRef.current.get(`nft:${event.nftId}`) || 0;
       if (event.version <= lastVersion) {
         return;
