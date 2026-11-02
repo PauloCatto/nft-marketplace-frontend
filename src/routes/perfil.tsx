@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   User,
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { apiClient, AUTH_TOKEN_KEY } from '../api/client';
+import { apiClient, AUTH_TOKEN_KEY, isAuthenticated, triggerRequireAuth } from '../api/client';
 import type { User as UserType, Wallet } from '../api/contracts';
 import { Header } from '../components/layout/Header';
 
@@ -27,6 +27,15 @@ const profileSearchSchema = z.object({
 export type ProfileSearchParams = Partial<z.infer<typeof profileSearchSchema>>;
 
 export const Route = createFileRoute('/perfil')({
+  beforeLoad: () => {
+    if (!isAuthenticated()) {
+      triggerRequireAuth({
+        message: 'Faça login na sua conta para acessar o Perfil do colecionador e Carteiras.',
+        redirectTo: '/perfil',
+      });
+      throw redirect({ to: '/' });
+    }
+  },
   validateSearch: (search: Record<string, unknown>): ProfileSearchParams => {
     const parsed = profileSearchSchema.safeParse(search);
     if (parsed.success) {
@@ -268,7 +277,7 @@ function CollectorProfilePage() {
   const handleLogout = async () => {
     try {
       await apiClient.post('/auth/logout');
-    } catch {}
+    } catch { }
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(AUTH_TOKEN_KEY);
     }
@@ -321,11 +330,10 @@ function CollectorProfilePage() {
                         search: { tab: item.id as 'dados' | 'carteiras' },
                       });
                     }}
-                    className={`relative w-full px-4 py-2.5 flex items-center gap-2.5 text-left text-[11px] transition-colors cursor-pointer ${
-                      isActive
+                    className={`relative w-full px-4 py-2.5 flex items-center gap-2.5 text-left text-[11px] transition-colors cursor-pointer ${isActive
                         ? 'text-[#D1823C] font-semibold bg-[#261811]'
                         : 'text-[#C2B2A6] hover:text-[#FAF5F0] hover:bg-[#24160F]/50'
-                    }`}
+                      }`}
                   >
                     {isActive && (
                       <span

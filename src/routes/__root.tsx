@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
-import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { createRootRoute, Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
+import { useIsFetching, useIsMutating, useQueryClient } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import { AUTH_TOKEN_KEY } from '../api/client';
+import { AUTH_TOKEN_KEY, consumePendingRequireAuth, type RequireAuthDetail } from '../api/client';
 import { AuthModal } from '../components/auth/AuthModal';
 import { db } from '../mocks/db';
 import { scenarios } from '../mocks/scenarios';
@@ -39,7 +40,14 @@ function NotFoundPage() {
 
 function RootComponent() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const isFetchingCount = useIsFetching();
+  const isMutatingCount = useIsMutating();
+  const isRouteTransitioning = useRouterState({ select: (s) => s.isLoading });
   const [isReauthOpen, setIsReauthOpen] = useState(false);
+  const pendingAuthActionRef = useRef<RequireAuthDetail | null>(null);
+
+  const isGlobalBusy = isFetchingCount > 0 || isMutatingCount > 0 || isRouteTransitioning;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -61,19 +69,62 @@ function RootComponent() {
       setIsReauthOpen(true);
     };
 
+    const handleRequireAuth = () => {
+      const detail = consumePendingRequireAuth();
+      if (!detail) return;
+      pendingAuthActionRef.current = detail;
+      toast.warning(detail.message || 'Faça login na sua conta para continuar.');
+      setIsReauthOpen(true);
+    };
+
+    handleRequireAuth();
+
     window.addEventListener('jungle:session-expired', handleSessionExpired);
-    return () => window.removeEventListener('jungle:session-expired', handleSessionExpired);
+    window.addEventListener('jungle:require-auth', handleRequireAuth);
+    return () => {
+      window.removeEventListener('jungle:session-expired', handleSessionExpired);
+      window.removeEventListener('jungle:require-auth', handleRequireAuth);
+    };
   }, [queryClient]);
 
   return (
     <div className="min-h-screen bg-[#140D0A] text-[#FAF5F0] flex flex-col">
+      {isGlobalBusy && (
+        <>
+          <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-[#2A1C15] z-[100] overflow-hidden">
+            <div className="h-full w-1/2 bg-[#D1823C] animate-pulse rounded-full" />
+          </div>
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-5 left-5 z-[95] inline-flex items-center gap-2 bg-[#1F1510]/95 backdrop-blur-md border border-[#3D2A1E] px-3.5 py-2 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.65)] text-xs font-semibold text-[#FAF5F0]"
+          >
+            <Loader2 className="w-4 h-4 text-[#D1823C] animate-spin" />
+            <span>{isMutatingCount > 0 ? 'Processando...' : 'Carregando...'}</span>
+          </div>
+        </>
+      )}
       <main className="flex-1">
         <Outlet />
       </main>
       <AuthModal
         isOpen={isReauthOpen}
         initialMode="login"
-        onClose={() => setIsReauthOpen(false)}
+        onClose={() => {
+          setIsReauthOpen(false);
+          pendingAuthActionRef.current = null;
+        }}
+        onSuccess={() => {
+          const pending = pendingAuthActionRef.current;
+          pendingAuthActionRef.current = null;
+          if (pending?.onSuccess) {
+            pending.onSuccess();
+          } else if (pending?.redirectTo) {
+            navigate({ to: pending.redirectTo });
+          } else {
+            navigate({ to: '/perfil' });
+          }
+        }}
       />
       <Toaster
         position="bottom-right"
