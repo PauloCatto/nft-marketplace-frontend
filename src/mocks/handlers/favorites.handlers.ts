@@ -53,7 +53,8 @@ export const favoritesHandlers = [
     }
 
     const nftIds = db.addFavorite(userId, nftId);
-    return HttpResponse.json({ success: true, nftIds }, { status: 201 });
+    const items = db.getFavorites(userId);
+    return HttpResponse.json({ success: true, nftIds, items }, { status: 201 });
   }),
   
   http.delete('*/api/favorites/:id', async ({ request, params }) => {
@@ -73,6 +74,7 @@ export const favoritesHandlers = [
     const nftId = String(params.id);
 
     const nftIds = db.removeFavorite(userId, nftId);
-    return HttpResponse.json({ success: true, nftIds });
+    const items = db.getFavorites(userId);
+    return HttpResponse.json({ success: true, nftIds, items });
   }),
 ];

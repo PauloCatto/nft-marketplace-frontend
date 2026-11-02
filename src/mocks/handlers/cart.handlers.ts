@@ -143,13 +143,13 @@ export const cartHandlers = [
 
     const { quote, error } = db.calculateQuote(userId, couponCode);
 
-    if (error === 'CUPOM_INVALIDO') {
+    if (error === 'INVALID_COUPON') {
       return HttpResponse.json(
         { error: { code: 'INVALID_COUPON', message: 'Cupom de desconto inválido ou inexistente.' } },
         { status: 400 }
       );
     }
-    if (error === 'CUPOM_EXPIRADO') {
+    if (error === 'EXPIRED_COUPON') {
       return HttpResponse.json(
         { error: { code: 'EXPIRED_COUPON', message: 'Este cupom de desconto expirou.' } },
         { status: 400 }

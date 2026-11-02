@@ -1,7 +1,6 @@
 import type { User } from '../../api/contracts';
 
 export interface UserRecord extends User {
-  
   simulatedPasswordHash: string;
 }
 
@@ -32,5 +31,14 @@ export const initialUsersFixture: UserRecord[] = [
     avatarUrl: '/assets/nfts/emerald-ape.png',
     simulatedPasswordHash: 'simulated_hash_Password123!',
     createdAt: '2026-03-01T12:00:00.000Z',
+  },
+  {
+    id: 'user-elena',
+    name: 'Elena Vance',
+    email: 'elena@crypto.io',
+    bio: 'Diretora de arte 3D e colecionadora de edições limitadas na rede Ethereum.',
+    avatarUrl: '/assets/nfts/sage-nomad.png',
+    simulatedPasswordHash: 'simulated_hash_Password123!',
+    createdAt: '2026-03-05T16:00:00.000Z',
   },
 ];
