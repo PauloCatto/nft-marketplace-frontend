@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { X, ChevronLeft, MoreVertical, Wallet as WalletIcon, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, MoreVertical, Wallet as WalletIcon, AlertTriangle } from 'lucide-react';
 import Decimal from 'decimal.js';
 import { toast } from 'sonner';
 import { apiClient, AUTH_TOKEN_KEY, isAuthenticated, triggerRequireAuth } from '../api/client';
@@ -18,6 +18,7 @@ import type {
 import { createJungleSocket } from '../mocks/socket/socketHandler';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
+import { OrderReceiptModal } from '../components/checkout/OrderReceiptModal';
 
 export const Route = createFileRoute('/checkout')({
   beforeLoad: () => {
@@ -94,7 +95,6 @@ function CheckoutPaymentPage() {
     () => `idem-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
   );
   const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
-  const [isEtherscanModalOpen, setIsEtherscanModalOpen] = useState(false);
   const [rejectedMessage, setRejectedMessage] = useState<string | null>(null);
   const [quoteStaleNotice, setQuoteStaleNotice] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -993,338 +993,20 @@ function CheckoutPaymentPage() {
         />
       </div>
 
-      {confirmedOrder && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="thank-you-modal-title"
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-[2px] flex items-center justify-center p-4 overflow-y-auto"
-          onClick={() => setConfirmedOrder(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-[465px] bg-[#1D120C] border border-[#3B2619] shadow-2xl overflow-hidden flex flex-col my-auto"
-          >
-            <button
-              type="button"
-              aria-label="Fechar comprovante"
-              onClick={() => setConfirmedOrder(null)}
-              className="absolute top-3.5 right-3.5 text-[#D1823C] hover:text-[#FAF5F0] transition-colors p-1 cursor-pointer"
-            >
-              <X className="w-4 h-4 stroke-[1.75]" />
-            </button>
-
-            <div className="pt-6 pb-4 px-6 flex flex-col items-center text-center">
-              <img
-                src="/assets/nfts/thank-you.png"
-                alt="Thank You"
-                width={52}
-                height={64}
-                className="w-[52px] h-auto object-contain mb-3"
-              />
-              <h2
-                id="thank-you-modal-title"
-                className="text-[#C2B2A6] text-xs font-medium tracking-wide"
-              >
-                Seus NFTs agora estão na sua carteira
-              </h2>
-            </div>
-
-            <div className="border-y border-[#5C3D28]/70 px-5 py-3 grid grid-cols-4 items-center text-[10.5px]">
-              <div className="pr-2 border-r border-[#5C3D28]/70">
-                <span className="text-[#A8968A] font-bold block">ID da transação</span>
-                <span className="text-[#C2B2A6] font-mono block mt-0.5">0xA91F…E82C</span>
-              </div>
-
-              <div className="px-3 border-r border-[#5C3D28]/70">
-                <span className="text-[#A8968A] font-bold block">Data</span>
-                <span className="text-[#C2B2A6] block mt-0.5">29 Jul, 2026</span>
-              </div>
-
-              <div className="px-3 border-r border-[#5C3D28]/70">
-                <span className="text-[#A8968A] font-bold block">Total</span>
-                <span className="text-[#C2B2A6] font-semibold block mt-0.5">
-                  {confirmedOrder.quotationSnapshot?.totalEth
-                    ? `${new Decimal(confirmedOrder.quotationSnapshot.totalEth).toFixed(3)} ETH`
-                    : '26.846 ETH'}
-                </span>
-              </div>
-
-              <div className="pl-3">
-                <span className="text-[#A8968A] font-bold block">Carteira</span>
-                <span className="text-[#C2B2A6] block mt-0.5">MetaMask</span>
-              </div>
-            </div>
-
-            <div className="px-7 pt-4 pb-6 flex flex-col">
-              <h3 className="text-[#FAF5F0] font-bold text-xs mb-2.5">Detalhes da transação</h3>
-
-              <div className="grid grid-cols-12 items-center pb-1.5 border-b border-[#38251A] text-xs font-bold text-[#FAF5F0]">
-                <div className="col-span-7">NFTs</div>
-                <div className="col-span-2 text-center">Edições</div>
-                <div className="col-span-3 text-right">Subtotal</div>
-              </div>
-
-              <div className="flex flex-col gap-3 mt-3">
-                {(confirmedOrder.quotationSnapshot?.items || []).map((purchasedItem) => {
-                  const rowTotal = new Decimal(purchasedItem.priceEth)
-                    .times(purchasedItem.quantity)
-                    .toFixed(2);
-                  const avatarSrc = getCheckoutRowAvatar(
-                    purchasedItem.nftId,
-                    '/assets/nfts/emerald-ape.png'
-                  );
-                  const tokenIdLabel = getCheckoutTokenId(
-                    purchasedItem.nftId,
-                    purchasedItem.name
-                  );
-
-                  return (
-                    <div
-                      key={purchasedItem.nftId}
-                      className="grid grid-cols-12 items-center gap-2"
-                    >
-                      <div className="col-span-7 flex items-center gap-3 min-w-0">
-                        <div className="w-[52px] h-[52px] rounded-[8px] overflow-hidden shrink-0 bg-[#140D0A]">
-                          <img
-                            src={avatarSrc}
-                            alt={purchasedItem.name}
-                            width={52}
-                            height={52}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-[#FAF5F0] font-bold text-xs truncate">
-                            {purchasedItem.name}
-                          </div>
-                          <div className="text-[#8C7A6B] text-[10px] mt-0.5">
-                            ID do token: {tokenIdLabel}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="col-span-2 text-center text-[#A8968A] text-[11px]">
-                        (x {purchasedItem.quantity})
-                      </div>
-
-                      <div className="col-span-3 text-right text-[#D1823C] font-extrabold text-xs">
-                        {rowTotal} ETH
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 pt-2 border-b border-[#38251A] pb-3 space-y-2 text-xs">
-                <div className="grid grid-cols-12 items-center">
-                  <div className="col-span-8 text-center text-[#C2B2A6]">Taxa de rede</div>
-                  <div className="col-span-4 text-right text-[#FAF5F0] font-medium">
-                    0.016 ETH
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-12 items-center">
-                  <div className="col-span-8 text-center text-[#FAF5F0] font-bold">Total</div>
-                  <div className="col-span-4 text-right text-[#D1823C] font-extrabold">
-                    {confirmedOrder.quotationSnapshot?.totalEth
-                      ? `${new Decimal(confirmedOrder.quotationSnapshot.totalEth).toFixed(3)} ETH`
-                      : '26.846 ETH'}
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-center text-[#A8968A] text-[10.5px] leading-[1.55] mt-3.5 px-2">
-                Transação confirmada na Ethereum. A propriedade foi transferida para sua carteira
-                conectada e registrada na rede.
-              </p>
-
-              <div className="mt-4 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEtherscanModalOpen(true);
-                  }}
-                  className="bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-extrabold text-xs px-6 py-2.5 rounded-[5px] transition-colors cursor-pointer"
-                >
-                  Ver no Etherscan
-                </button>
-              </div>
-            </div>
-
-            <div className="h-[10px] w-full bg-[#D1823C]" />
-          </div>
-        </div>
-      )}
-
-      {confirmedOrder && isEtherscanModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Explorador de Blocos Etherscan"
-          className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
-          onClick={() => setIsEtherscanModalOpen(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[540px] bg-[#19100B] border border-[#3D2A1E] rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.95)] overflow-hidden flex flex-col my-auto"
-          >
-            <div className="px-6 py-4 bg-[#22150E] border-b border-[#38251A] flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <div>
-                  <h3 className="text-xs font-extrabold text-[#FAF5F0] uppercase tracking-wider">
-                    Etherscan • Explorador On-Chain
-                  </h3>
-                  <p className="text-[10px] text-[#A8968A]">
-                    Ethereum Mainnet • Bloco #19842601 • 12 Confirmações
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                aria-label="Fechar Etherscan"
-                onClick={() => setIsEtherscanModalOpen(false)}
-                className="text-[#A8968A] hover:text-[#FAF5F0] p-1 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4 text-xs">
-              <div className="bg-[#140D0A] border border-[#2C1E16] rounded-xl p-3.5 space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[#A8968A] text-[11px]">Status na Rede:</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-[10.5px]">
-                    Sucesso (Confirmado)
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-1 pt-1 border-t border-[#24160F]">
-                  <span className="text-[#A8968A] text-[10.5px]">Transaction Hash:</span>
-                  <div className="flex items-center justify-between gap-2 bg-[#1D120C] px-2.5 py-1.5 rounded border border-[#332016]">
-                    <span className="font-mono text-[10.5px] text-[#D1823C] truncate">
-                      {confirmedOrder.receipt?.transactionHash ||
-                        '0xA91F8842d92c4E5B890123456789ABCDEF01E82C'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void navigator.clipboard.writeText(
-                          confirmedOrder.receipt?.transactionHash ||
-                            '0xA91F8842d92c4E5B890123456789ABCDEF01E82C'
-                        );
-                        toast.success('Hash da transação copiado!');
-                      }}
-                      className="text-[10px] font-bold text-[#FAF5F0] hover:text-[#D1823C] shrink-0 cursor-pointer"
-                    >
-                      Copiar
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-1 border-t border-[#24160F] text-[11px]">
-                  <div>
-                    <span className="text-[#A8968A] block text-[10px]">De (Contrato Kurio):</span>
-                    <span className="font-mono text-[#FAF5F0] text-[10.5px]">
-                      0x4B20...9e22C02db
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[#A8968A] block text-[10px]">Para (Sua Carteira):</span>
-                    <span className="font-mono text-[#FAF5F0] text-[10.5px] truncate block">
-                      {confirmedOrder.walletAddress || '0x71C4...498b'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-[#140D0A] border border-[#2C1E16] rounded-xl p-3.5 space-y-2">
-                <span className="text-[11px] font-bold text-[#FAF5F0] block">
-                  Tokens ERC-721 Transferidos
-                </span>
-                <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
-                  {(confirmedOrder.quotationSnapshot?.items || []).map((item) => (
-                    <div
-                      key={item.nftId}
-                      className="flex items-center justify-between text-[11px] py-1 border-b border-[#24160F] last:border-0"
-                    >
-                      <span className="text-[#C2B2A6] truncate">
-                        {item.name} ({getCheckoutTokenId(item.nftId, item.name)}) × {item.quantity}
-                      </span>
-                      <span className="text-[#D1823C] font-bold shrink-0">
-                        {new Decimal(item.priceEth).times(item.quantity).toFixed(2)} ETH
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="pt-2 border-t border-[#2C1E16] flex items-center justify-between text-xs">
-                  <span className="text-[#A8968A]">Valor Total Liquidado (+ Gas 0.016 ETH):</span>
-                  <span className="text-[#D1823C] font-extrabold">
-                    {confirmedOrder.quotationSnapshot?.totalEth
-                      ? `${new Decimal(confirmedOrder.quotationSnapshot.totalEth).toFixed(3)} ETH`
-                      : '26.846 ETH'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const receiptPayload = {
-                      network: 'Ethereum Mainnet',
-                      blockNumber: 19842601,
-                      orderId: confirmedOrder.id,
-                      transactionHash:
-                        confirmedOrder.receipt?.transactionHash ||
-                        '0xA91F8842d92c4E5B890123456789ABCDEF01E82C',
-                      walletAddress: confirmedOrder.walletAddress,
-                      quotationSnapshot: confirmedOrder.quotationSnapshot,
-                      verifiedAt: new Date().toISOString(),
-                    };
-                    const blob = new Blob([JSON.stringify(receiptPayload, null, 2)], {
-                      type: 'application/json',
-                    });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `etherscan-receipt-${confirmedOrder.id}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    toast.success('Recibo Etherscan (.json) baixado com sucesso!');
-                  }}
-                  className="w-full sm:flex-1 py-2.5 px-3 rounded-lg border border-[#3D2A1E] hover:border-[#D1823C] text-[#FAF5F0] font-bold text-[11px] transition-colors cursor-pointer"
-                >
-                  Baixar Recibo (.JSON)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEtherscanModalOpen(false);
-                    setConfirmedOrder(null);
-                    navigate({ to: '/downloads' });
-                  }}
-                  className="w-full sm:flex-1 py-2.5 px-3 rounded-lg bg-[#2A1C15] hover:bg-[#38251A] text-[#D1823C] font-bold text-[11px] transition-colors cursor-pointer"
-                >
-                  Meus Downloads
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEtherscanModalOpen(false);
-                    setConfirmedOrder(null);
-                    navigate({ to: '/' });
-                  }}
-                  className="w-full sm:flex-1 py-2.5 px-3 rounded-lg bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-extrabold text-[11px] transition-colors cursor-pointer"
-                >
-                  Concluir
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <OrderReceiptModal
+        order={confirmedOrder}
+        onClose={() => setConfirmedOrder(null)}
+        onNavigateHome={() => {
+          setConfirmedOrder(null);
+          navigate({ to: '/' });
+        }}
+        onNavigateDownloads={() => {
+          setConfirmedOrder(null);
+          navigate({ to: '/downloads' });
+        }}
+        getRowAvatar={getCheckoutRowAvatar}
+        getTokenId={getCheckoutTokenId}
+      />
     </div>
   );
 }

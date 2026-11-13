@@ -7,4 +7,3 @@ export interface ApiErrorResponse {
     details?: unknown;
   };
 }
-

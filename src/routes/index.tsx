@@ -14,9 +14,6 @@ import {
   Scan,
   X,
   Loader2,
-  BookOpen,
-  CheckCircle2,
-  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient, AUTH_TOKEN_KEY, isAuthenticated, triggerRequireAuth } from '../api/client';
@@ -35,6 +32,14 @@ import { db } from '../mocks/db';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { AuthModal } from '../components/auth/AuthModal';
+import { EditorialArticleModal } from '../components/home/EditorialArticleModal';
+import {
+  COLLECTION_FILTERS,
+  EDITORIAL_POSTS,
+  HERO_SLIDES,
+  NETWORK_FILTERS,
+  type EditorialPost,
+} from '../constants/home.constants';
 
 const defaultCatalogSearch: CatalogQueryParams = {
   search: '',
@@ -73,192 +78,6 @@ export const Route = createFileRoute('/')({
   },
   component: HomeDiscoveryPage,
 });
-
-const COLLECTION_FILTERS = [
-  { name: 'Arte digital', count: 33 },
-  { name: 'Fotografia', count: 12 },
-  { name: 'Música', count: 65 },
-  { name: 'Arte 3D', count: 39 },
-  { name: 'Colecionáveis', count: 23 },
-  { name: 'Generativo', count: 17 },
-  { name: 'Jogos', count: 19 },
-  { name: 'Assinaturas', count: 13 },
-  { name: 'Utilidade', count: 18 },
-];
-
-const NETWORK_FILTERS = [
-  { name: 'Ethereum', count: 119 },
-  { name: 'Polygon', count: 78 },
-  { name: 'Solana', count: 86 },
-];
-
-interface HeroSlide {
-  id: string;
-  subtitle: string;
-  titleLine1: string;
-  titleLine2: string;
-  description: string;
-  imageUrl: string;
-  imageAlt: string;
-  mobileMainImage: string;
-  mobileOverlapImage: string;
-}
-
-const HERO_SLIDES: HeroSlide[] = [
-  {
-    id: 'nft-1',
-    subtitle: 'Bem-vindo à Kurio',
-    titleLine1: 'SEJA DONO DO FUTURO',
-    titleLine2: 'DA ARTE DIGITAL',
-    description:
-      'Descubra NFTs selecionados de criadores emergentes e consagrados. Colecione arte digital rara, apoie artistas e tenha uma parte da cultura da internet.',
-    imageUrl: '/assets/nfts/emerald-ape.png',
-    imageAlt: 'Emerald Ape #042 — Macaco com óculos escuros redondos e jaqueta verde',
-    mobileMainImage: '/assets/nfts/emerald-ape.png',
-    mobileOverlapImage: '/assets/nfts/card-4.png',
-  },
-  {
-    id: 'nft-2',
-    subtitle: 'Coleção em Destaque',
-    titleLine1: 'SANTUÁRIO NOMAD',
-    titleLine2: 'EDIÇÃO GÊNESIS',
-    description:
-      'Obras digitais raras criadas com estética orgânica e benefícios exclusivos para colecionadores verificados na rede.',
-    imageUrl: '/assets/nfts/sage-nomad-featured.png',
-    imageAlt: 'Sage Nomad #009 — Macaco com chapéu bucket verde-oliva e moletom roxo',
-    mobileMainImage: '/assets/nfts/sage-nomad-featured.png',
-    mobileOverlapImage: '/assets/nfts/card-5.png',
-  },
-  {
-    id: 'nft-3',
-    subtitle: 'Curadoria Kurio',
-    titleLine1: 'BARON SYNDICATE',
-    titleLine2: 'ARTE 3D AUTORAL',
-    description:
-      'Retratos tridimensionais esculpidos com precisão, autenticidade verificada em blockchain e tiragem estritamente limitada.',
-    imageUrl: '/assets/nfts/ivory-baron.png',
-    imageAlt: 'Neon Vessel #552 — Macaco com blazer marfim e gola alta verde-escura',
-    mobileMainImage: '/assets/nfts/ivory-baron.png',
-    mobileOverlapImage: '/assets/nfts/card-6.png',
-  },
-];
-
-interface EditorialPost {
-  id: string;
-  date: string;
-  readTime: string;
-  title: string;
-  excerpt: string;
-  imageUrl: string;
-  category: string;
-  author: {
-    name: string;
-    role: string;
-  };
-  content: {
-    heading: string;
-    text: string;
-  }[];
-}
-
-const EDITORIAL_POSTS: EditorialPost[] = [
-  {
-    id: 'post-1',
-    date: '12 de setembro',
-    readTime: 'Leitura de 4 min',
-    title: 'Como funciona a propriedade de NFTs',
-    category: 'Fundamentos',
-    excerpt: 'Aprenda a autenticar, negociar e custodiar ativos digitais com segurança.',
-    imageUrl: '/assets/nfts/ivory-baron.png',
-    author: {
-      name: 'Equipe de Curadoria Kurio',
-      role: 'Pesquisa Web3 & Tokenomics',
-    },
-    content: [
-      {
-        heading: 'O que representa o token não fungível',
-        text: 'Diferente de ativos fungíveis como Bitcoin ou moedas fiduciárias, cada NFT possui um identificador único registrado em contratos inteligentes invioláveis. Na Kurio, cada obra contém metadados imutáveis e registro transparente de procedência.',
-      },
-      {
-        heading: 'Custódia própria e certificados de autenticidade',
-        text: 'Ao adquirir uma obra, sua carteira se torna o custodiante oficial. Você possui a prerrogativa de exibir em galerias virtuais, negociar no mercado secundário e ter acesso a utilidades exclusivas liberadas pelo criador.',
-      },
-      {
-        heading: 'Boas práticas para novos colecionadores',
-        text: 'Sempre confirme o endereço do contrato inteligente antes de interações de alto valor. Nunca compartilhe sua seed phrase e utilize carteiras distintas para navegação diária e cofre de longo prazo.',
-      },
-    ],
-  },
-  {
-    id: 'post-2',
-    date: '15 de setembro',
-    readTime: 'Leitura de 3 min',
-    title: '10 artistas digitais para acompanhar',
-    category: 'Curadoria',
-    excerpt: 'Conheça criadores que moldam a estética e cultura visual contemporânea.',
-    imageUrl: '/assets/nfts/emerald-ape.png',
-    author: {
-      name: 'Maya Lin & Colecionadores',
-      role: 'Artes Visuais & Design Generativo',
-    },
-    content: [
-      {
-        heading: 'A nova vanguarda da arte descentralizada',
-        text: 'Artistas contemporâneos combinam modelagem 3D, algoritmos generativos e narrativas ficcionais para criar mundos colecionáveis com identidades visuais marcantes.',
-      },
-      {
-        heading: 'Comunidades em torno de coleções autoriais',
-        text: 'Coleções como Nomad Sanctuary e Baron Syndicate provam que o valor de uma obra vai além do visual: engloba encontros virtuais, direitos de derivação artística e participação em drops futuros.',
-      },
-    ],
-  },
-  {
-    id: 'post-3',
-    date: '18 de setembro',
-    readTime: 'Leitura de 5 min',
-    title: 'Raridade, atributos e procedência',
-    category: 'Análise de Mercado',
-    excerpt: 'Entenda camadas de raridade, procedência on-chain e como avaliar peças.',
-    imageUrl: '/assets/nfts/sage-nomad-featured.png',
-    author: {
-      name: 'Vortex Studios',
-      role: 'Análise Quantitativa & Smart Contracts',
-    },
-    content: [
-      {
-        heading: 'A pirâmide de atributos em coleções',
-        text: 'Peças com trajes raros, paletas de cores únicas ou características de tiragem estrita (1/10 ou 1/1) costumam apresentar maior resiliência em ciclos de mercado devido à escassez programada.',
-      },
-      {
-        heading: 'Rastreabilidade histórica',
-        text: 'O histórico de transações permite verificar quantas mãos a obra percorreu desde a cunhagem original, afastando fraudes e garantindo o pagamento de royalties justos aos criadores.',
-      },
-    ],
-  },
-  {
-    id: 'post-4',
-    date: '22 de setembro',
-    readTime: 'Leitura de 4 min',
-    title: 'Como proteger sua carteira',
-    category: 'Segurança',
-    excerpt: 'Proteja sua carteira, seed phrase e ativos contra armadilhas e phishing.',
-    imageUrl: '/assets/nfts/golden-beat.png',
-    author: {
-      name: 'Alex Kurio',
-      role: 'Segurança da Informação Web3',
-    },
-    content: [
-      {
-        heading: 'Os três pilares da soberania digital',
-        text: 'Nenhuma equipe de suporte legítima solicitará suas 12 ou 24 palavras de recuperação. Mantenha cópias físicas off-line e jamais salve arquivos de texto com credenciais na nuvem.',
-      },
-      {
-        heading: 'Revisão constante de permissões',
-        text: 'Revogue permissões de contratos de cunhagem antigos periodicamente e utilize autenticação em dois fatores em serviços centralizados correlatos.',
-      },
-    ],
-  },
-];
 
 function formatPriceLabel(val: number): string {
   return val.toFixed(2).replace('.', ',');
@@ -1998,106 +1817,10 @@ function HomeDiscoveryPage() {
         </div>
       </div>
 
-      {selectedArticle && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="article-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={() => setSelectedArticle(null)}
-        >
-          <div
-            className="bg-[#19100A] border border-[#3D281C] rounded-2xl max-w-2xl w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-[#140D0A] shrink-0">
-              <img
-                src={selectedArticle.imageUrl}
-                alt={selectedArticle.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#19100A] via-[#19100A]/40 to-black/50" />
-              <button
-                type="button"
-                aria-label="Fechar artigo"
-                onClick={() => setSelectedArticle(null)}
-                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/70 hover:bg-[#D1823C] text-white hover:text-[#140D0A] flex items-center justify-center border border-white/10 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between">
-                <span className="px-3 py-1 rounded-full bg-[#D1823C] text-[#140D0A] text-[10px] font-black uppercase tracking-wider shadow">
-                  {selectedArticle.category}
-                </span>
-                <span className="text-[11px] text-[#E8D7C8] bg-black/50 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
-                  {selectedArticle.date} • {selectedArticle.readTime}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-6 sm:p-7 overflow-y-auto space-y-5 flex-1 pr-5">
-              <div>
-                <h2
-                  id="article-modal-title"
-                  className="text-xl sm:text-2xl font-bold text-[#FAF5F0] leading-snug tracking-tight"
-                >
-                  {selectedArticle.title}
-                </h2>
-                <p className="text-xs text-[#D1823C] font-medium leading-relaxed italic border-l-2 border-[#D1823C] pl-3 py-1 mt-3">
-                  {selectedArticle.excerpt}
-                </p>
-                <div className="mt-4 pt-3 border-t border-[#2C1E16] flex items-center justify-between text-[11px] text-[#A8968A]">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-[#D1823C] text-[#140D0A] font-bold text-[10px] flex items-center justify-center">
-                      {selectedArticle.author.name.charAt(0)}
-                    </div>
-                    <span>
-                      Por <strong className="text-[#FAF5F0]">{selectedArticle.author.name}</strong> •{' '}
-                      <span className="text-[#8C7A6B]">{selectedArticle.author.role}</span>
-                    </span>
-                  </div>
-                  <span className="text-[#D1823C] font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Verificado
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-4 text-xs text-[#C5B4A6] leading-relaxed">
-                {selectedArticle.content.map((sec, idx) => (
-                  <div key={idx} className="space-y-2 bg-[#211610]/50 p-4 rounded-xl border border-[#2E1E14]">
-                    <h3 className="text-[13px] font-bold text-[#FAF5F0] flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-[#D1823C] shrink-0" />
-                      <span>{sec.heading}</span>
-                    </h3>
-                    <p className="text-[12px] leading-relaxed text-[#B5A395] pl-6">{sec.text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-[#2C1E16] bg-[#140D0A] flex items-center justify-between gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast.success('Link do artigo copiado para a área de transferência!');
-                }}
-                className="inline-flex items-center gap-1.5 text-xs text-[#C2B2A6] hover:text-[#D1823C] transition-colors cursor-pointer"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Copiar link</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedArticle(null)}
-                className="bg-[#D1823C] hover:bg-[#E0924B] text-[#140D0A] font-bold text-xs px-6 py-2 rounded-lg transition-colors cursor-pointer shadow-md"
-              >
-                Concluir leitura
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditorialArticleModal
+        article={selectedArticle}
+        onClose={() => setSelectedArticle(null)}
+      />
     </div>
   );
 }

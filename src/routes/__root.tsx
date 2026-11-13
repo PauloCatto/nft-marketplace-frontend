@@ -5,6 +5,7 @@ import { Loader2, X } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { AUTH_TOKEN_KEY, consumePendingRequireAuth, type RequireAuthDetail } from '../api/client';
 import { AuthModal } from '../components/auth/AuthModal';
+import { NetworkDevTools } from '../components/devtools/NetworkDevTools';
 import { db } from '../mocks/db';
 import { scenarios } from '../mocks/scenarios';
 
@@ -143,8 +144,9 @@ function RootComponent() {
           }
         }}
       />
+      <NetworkDevTools />
       <Toaster
-        position="bottom-right"
+        position="top-right"
         closeButton
         duration={2500}
         toastOptions={{
